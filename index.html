@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The House Always Remembers</title>
+  <style>
+    :root { --ink: #d9cfb4; --dim: rgba(217, 207, 180, 0.6); --panel: rgba(8, 6, 4, 0.88); --line: rgba(217, 207, 180, 0.25); }
+    html, body { margin: 0; height: 100%; background: #050403; overflow: hidden; color: var(--ink); font-family: Georgia, "Times New Roman", serif; }
+    canvas { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+    .overlay { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--panel); }
+    .overlay.show { display: flex; }
+    .overlay { z-index: 6; }
+    h1 { font-weight: normal; letter-spacing: 0.28em; font-size: clamp(20px, 4vw, 38px); margin: 0 0 10px; }
+    .tag { font-style: italic; color: var(--dim); margin: 0 0 36px; }
+    button { font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); padding: 10px 26px; cursor: pointer; letter-spacing: 0.12em; }
+    button:hover { background: rgba(217, 207, 180, 0.1); }
+    .hint { color: var(--dim); font-size: 13px; margin-top: 28px; line-height: 1.8; }
+    .row { display: flex; gap: 12px; align-items: center; justify-content: space-between; width: 280px; margin: 8px 0; font-size: 14px; color: var(--dim); }
+    select, input[type=range] { background: #120e0a; color: var(--ink); border: 1px solid var(--line); font: inherit; }
+    #prompt { position: fixed; left: 50%; top: 56%; transform: translateX(-50%); font-size: 16px; letter-spacing: 0.06em; text-shadow: 0 1px 6px #000; pointer-events: none; opacity: 0; transition: opacity 0.12s; }
+    #prompt.show { opacity: 0.95; }
+    #dot { position: fixed; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1px; border-radius: 50%; background: rgba(255, 240, 210, 0.4); pointer-events: none; }
+    #toast { position: fixed; left: 50%; bottom: 14%; transform: translateX(-50%); max-width: 70vw; text-align: center; font-style: italic; text-shadow: 0 1px 8px #000; pointer-events: none; opacity: 0; transition: opacity 0.4s; }
+    #toast.show { opacity: 1; }
+    #inventory { position: fixed; right: 16px; bottom: 14px; font-size: 13px; letter-spacing: 0.05em; color: var(--dim); text-align: right; pointer-events: none; text-shadow: 0 1px 6px #000; }
+    #room-label { position: fixed; right: 18px; top: 14px; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); opacity: 0; transition: opacity 0.8s; pointer-events: none; }
+    #room-label.show { opacity: 0.8; }
+    #bench-result { max-width: 92vw; max-height: 34vh; overflow: auto; font: 11px/1.5 ui-monospace, Menlo, monospace; text-align: left; color: var(--dim); margin: 10px 0 0; white-space: pre; }
+
+    #veil { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; transition: opacity 0.7s; }
+    #cine-photo { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 1.8s; z-index: 7; }
+    #cine-photo.show { opacity: 1; }
+    #cine-photo canvas { width: min(62vw, 82vh); height: auto; box-shadow: 0 0 60px #000; transform: rotate(-1.2deg); }
+    .bar { position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 9; pointer-events: none; transition: height 1.4s ease; }
+    .bar.on { height: 11vh; }
+    #bar-top { top: 0; } #bar-bottom { bottom: 0; }
+    #choices { position: fixed; left: 50%; bottom: 20%; transform: translateX(-50%); width: min(640px, 86vw); display: none; flex-direction: column; gap: 8px; z-index: 10; }
+    #choices.show { display: flex; }
+    #choices button { text-align: left; background: rgba(6, 4, 3, 0.82); padding: 12px 18px; letter-spacing: 0.04em; font-size: 16px; }
+    #choices button span { color: var(--dim); margin-right: 10px; }
+    #end-card { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: rgba(0, 0, 0, 0.78); opacity: 0; pointer-events: none; transition: opacity 1.6s; }
+    #end-card.show { opacity: 1; }
+    #end-card-title { font-size: clamp(20px, 3.6vw, 34px); letter-spacing: 0.24em; margin-bottom: 18px; }
+    #end-card-text { max-width: 560px; font-style: italic; color: var(--dim); line-height: 1.7; }
+    #credits { position: fixed; inset: 0; z-index: 11; background: #000; display: none; overflow: hidden; text-align: center; }
+    #credits.show { display: block; }
+    #credits-roll { position: absolute; left: 0; right: 0; top: 100%; animation: roll 40s linear forwards; }
+    #credits-roll h2 { font-weight: normal; letter-spacing: 0.3em; font-size: 26px; margin: 0 0 80px; }
+    #credits-roll p { margin: 0 0 56px; color: var(--dim); line-height: 1.7; }
+    #credits-roll i { color: var(--ink); font-style: normal; letter-spacing: 0.1em; }
+    #credits-after { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; font-style: italic; color: var(--dim); }
+    #credits-after.show { display: flex; }
+    @keyframes roll { from { transform: translateY(0); } to { transform: translateY(-120%); } }
+    #settings { z-index: 12; overflow: auto; }
+    .menu-stack { display: flex; flex-direction: column; gap: 10px; width: 280px; }
+    .menu-stack button { width: 100%; }
+    #cutscene { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.6s; }
+    #cutscene.show { opacity: 1; pointer-events: auto; transition: opacity 0.4s; }
+    #chapter-card { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 1.4s; text-align: center; z-index: 5; }
+    #chapter-card.show { opacity: 1; }
+    #chapter-num { font-size: 13px; letter-spacing: 0.5em; color: var(--dim); margin-bottom: 14px; }
+    #chapter-title { font-size: clamp(22px, 4vw, 42px); letter-spacing: 0.28em; text-shadow: 0 2px 18px #000; padding: 0 5vw; }
+    #thought { position: fixed; left: 50%; bottom: 34%; transform: translateX(-50%); max-width: 62vw; text-align: center; font-style: italic; font-size: 18px; color: #e8dcc0; text-shadow: 0 1px 10px #000, 0 0 22px #000; opacity: 0; transition: opacity 0.7s; pointer-events: none; }
+    #thought.show { opacity: 0.95; }
+    #subtitle { position: fixed; left: 50%; bottom: 9%; transform: translateX(-50%); max-width: 72vw; text-align: center; font-size: 17px; background: rgba(0, 0, 0, 0.55); padding: 6px 14px; opacity: 0; transition: opacity 0.25s; pointer-events: none; z-index: 4; }
+    #subtitle.show { opacity: 1; }
+    #subtitle b { color: #b9a66e; font-weight: normal; letter-spacing: 0.08em; margin-right: 8px; font-size: 13px; text-transform: uppercase; }
+    #evidence-toast { position: fixed; left: 16px; bottom: 56px; font-size: 14px; letter-spacing: 0.04em; padding: 8px 12px; background: rgba(8, 6, 4, 0.8); border-left: 2px solid #b9a66e; opacity: 0; transform: translateX(-12px); transition: opacity 0.4s, transform 0.4s; pointer-events: none; }
+    #evidence-toast.show { opacity: 1; transform: none; }
+    #evidence-toast span { display: block; font-size: 11px; color: var(--dim); margin-top: 3px; letter-spacing: 0.15em; text-transform: uppercase; }
+    #objective { position: fixed; left: 16px; bottom: 16px; max-width: 46vw; font-size: 12px; line-height: 1.5; color: var(--dim); opacity: 0.35; transition: opacity 1.2s; pointer-events: none; text-shadow: 0 1px 6px #000; }
+    #objective.bright { opacity: 0.95; }
+    #hint-keys { position: fixed; right: 16px; top: 38px; font-size: 11px; letter-spacing: 0.15em; color: var(--dim); opacity: 0.5; pointer-events: none; display: none; }
+    .jbox { background: rgba(10, 8, 6, 0.96); border: 1px solid var(--line); width: min(980px, 94vw); max-height: 88vh; display: flex; flex-direction: column; text-align: left; }
+    .jbox.small { width: min(520px, 92vw); }
+    .jhead { display: flex; justify-content: space-between; align-items: flex-end; padding: 16px 20px 6px; }
+    .jtitle { letter-spacing: 0.3em; font-size: 20px; }
+    .jsub { font-size: 12px; color: var(--dim); letter-spacing: 0.08em; margin-top: 3px; }
+    .jobj { padding: 0 20px 10px; font-style: italic; color: #cdbf9a; font-size: 14px; border-bottom: 1px solid var(--line); }
+    .jtabs { display: flex; gap: 4px; padding: 10px 20px 0; }
+    .jtabs button { padding: 7px 16px; font-size: 13px; letter-spacing: 0.1em; border-color: transparent; }
+    .jtabs button.on { border-color: var(--line); background: rgba(217, 207, 180, 0.08); }
+    .jbody { padding: 14px 20px; overflow: auto; font-size: 14px; line-height: 1.55; min-height: 220px; }
+    .jfoot { padding: 8px 20px 12px; font-size: 11px; color: var(--dim); letter-spacing: 0.12em; }
+    .empty { color: var(--dim); font-style: italic; }
+    .two { display: grid; grid-template-columns: 290px 1fr; gap: 20px; }
+    .list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }
+    .row { text-align: left; align-items: flex-start; padding: 8px 10px; letter-spacing: 0; display: flex; flex-direction: column; border-color: transparent; }
+    .row.on { border-color: var(--line); background: rgba(217, 207, 180, 0.08); }
+    .row i { font-size: 11px; color: var(--dim); font-style: normal; letter-spacing: 0.08em; }
+    .detail h3 { font-weight: normal; letter-spacing: 0.1em; margin: 0 0 4px; font-size: 18px; }
+    .meta { font-size: 12px; color: var(--dim); margin-bottom: 10px; }
+    .thumb { float: right; width: 150px; margin: 0 0 10px 14px; border: 1px solid var(--line); }
+    .act { padding: 6px 16px; font-size: 12px; margin: 8px 8px 0 0; }
+    h4 { font-weight: normal; letter-spacing: 0.25em; font-size: 12px; color: var(--dim); margin: 16px 0 6px; text-transform: uppercase; }
+    .trow { display: grid; grid-template-columns: 130px 1fr; gap: 14px; padding: 6px 0; border-bottom: 1px solid rgba(217, 207, 180, 0.1); }
+    .trow span { color: #b9a66e; letter-spacing: 0.05em; }
+    .trow p { margin: 0; } .trow i { display: block; font-size: 11px; color: var(--dim); font-style: normal; margin-top: 2px; }
+    .trow.unknown { opacity: 0.55; } .trow.gap p { font-style: italic; color: var(--dim); } .trow.gap { background: repeating-linear-gradient(135deg, transparent 0 8px, rgba(217,207,180,0.04) 8px 16px); }
+    .action { margin-top: 14px; } .ok { color: #9db98a; } .msg { color: #c0888a; min-height: 1em; }
+    .cards { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; } .card { text-align: left; letter-spacing: 0; padding: 8px 12px; }
+    .picked { margin: 8px 0; padding: 8px 12px; border: 1px dashed var(--line); } .pick { padding: 2px 0; }
+    .mem { padding: 10px 14px; margin-bottom: 10px; border-left: 3px solid #8a7f5e; background: rgba(217, 207, 180, 0.04); }
+    .mem.doubted { border-color: #b9a66e; } .mem.refuted { border-color: #6f8f66; opacity: 0.85; } .mem .said { font-style: italic; font-size: 16px; margin: 0 0 4px; } .mem.refuted .said { text-decoration: line-through; text-decoration-color: rgba(217,207,180,0.4); }
+    .stat { font-size: 12px; color: var(--dim); letter-spacing: 0.08em; } .because { font-size: 13px; margin-top: 4px; padding-left: 10px; border-left: 1px solid var(--line); }
+    .rec { margin-bottom: 16px; padding: 10px 14px; border: 1px solid rgba(217, 207, 180, 0.15); } .rec.ok { border-color: #6f8f66; }
+    .rtop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; } .tl { font-size: 13px; padding: 1px 0; } .tl b { color: #b9a66e; font-weight: normal; margin-right: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .pickrow { display: block; padding: 4px 0; cursor: pointer; } .pickrow input { margin-right: 8px; }
+    .tape { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(217,207,180,0.12); } .tape i { display: block; font-size: 11px; color: var(--dim); font-style: normal; }
+    #story-end { z-index: 9; }
+    @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+    #hud { position: fixed; left: 10px; top: 8px; font: 11px/1.5 ui-monospace, Menlo, monospace; color: rgba(217, 207, 180, 0.7); background: rgba(0, 0, 0, 0.45); padding: 6px 8px; white-space: pre; pointer-events: none; }
+    #inspect { background: transparent; justify-content: flex-end; padding-bottom: 8vh; pointer-events: none; }
+    #inspect .box { background: var(--panel); border: 1px solid var(--line); padding: 14px 22px; max-width: 460px; }
+    #inspect h2 { font-weight: normal; margin: 0 0 6px; letter-spacing: 0.15em; font-size: 16px; }
+    #inspect p { margin: 0 0 8px; font-size: 14px; color: var(--dim); }
+    #keypad .pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 8px; margin-top: 14px; }
+    #keypad .pad button { padding: 14px 0; }
+    #kp-display { font: 30px ui-monospace, Menlo, monospace; letter-spacing: 0.5em; height: 40px; min-width: 180px; border-bottom: 1px solid var(--line); }
+    #kp-display.bad { color: #c0584a; }
+    #loading.show { background: #050403; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="dot"></div>
+  <div id="prompt"></div>
+  <div id="toast"></div>
+  <div id="inventory"></div>
+  <div id="room-label"></div>
+  <div id="hud"></div>
+
+  <div id="veil"></div>
+  <div id="cutscene"></div>
+  <div id="cine-photo"><canvas id="cine-canvas" width="640" height="480"></canvas></div>
+  <div class="bar" id="bar-top"></div><div class="bar" id="bar-bottom"></div>
+  <div id="chapter-card"><div id="chapter-num"></div><div id="chapter-title"></div></div>
+  <div id="thought"></div>
+  <div id="subtitle"></div>
+  <div id="evidence-toast"></div>
+  <div id="objective"></div>
+  <div id="hint-keys">[J] JOURNAL</div>
+  <div id="journal" class="overlay"></div>
+  <div id="recorder" class="overlay"></div>
+  <div id="choices"></div>
+  <div id="end-card"><div id="end-card-title"></div><div id="end-card-text"></div></div>
+  <div id="credits"><div id="credits-roll"></div><div id="credits-after">(The telephone rings in the empty house. No one speaks.)</div></div>
+  <div id="story-end" class="overlay"><h1 id="end-title"></h1><p id="end-body" class="tag"></p><button id="end-close">KEEP EXPLORING</button></div>
+  <div id="loading" class="overlay show"><h1>THE HOUSE ALWAYS REMEMBERS</h1><p class="tag">Loading…</p></div>
+
+  <div id="menu" class="overlay">
+    <h1>THE HOUSE ALWAYS REMEMBERS</h1>
+    <p class="tag">You can bury the truth. You cannot make it forget.</p>
+    <div class="menu-stack">
+      <button id="btn-continue" style="display:none">CONTINUE</button>
+      <button id="btn-begin">NEW GAME</button>
+      <button id="btn-settings">SETTINGS</button>
+      <button id="btn-credits">CREDITS</button>
+      <button id="btn-clear" style="display:none">CLEAR SAVE DATA</button>
+    </div>
+    <p id="menu-msg" class="hint" style="margin-top: 14px; min-height: 18px"></p>
+    <p class="hint">WASD move · Shift run · Mouse look · E interact · F flashlight · J journal<br />Esc pause · F3 performance overlay<br /><em>Headphones recommended.</em></p>
+  </div>
+
+  <div id="pause" class="overlay">
+    <h1>PAUSED</h1>
+    <p class="tag">&nbsp;</p>
+    <button id="btn-resume">RESUME</button>
+    <div style="height: 24px"></div>
+    <div class="menu-stack">
+      <button id="btn-save">SAVE GAME</button>
+      <button id="btn-pause-settings">SETTINGS</button>
+      <button id="btn-journal">OPEN JOURNAL</button>
+      <button id="btn-tomenu">RETURN TO MAIN MENU</button>
+      <button id="btn-bench">RUN BENCHMARK WALK</button>
+    </div>
+    <p id="save-msg" class="hint" style="margin-top: 10px; min-height: 16px"></p>
+    <pre id="bench-result"></pre>
+  </div>
+
+
+  <div id="settings" class="overlay">
+    <h1 style="font-size: 22px">SETTINGS</h1>
+    <p class="tag">&nbsp;</p>
+    <label class="row">Render scale
+      <select id="set-scale"><option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option></select>
+    </label>
+    <label class="row">Master volume <input id="set-volume" type="range" min="0" max="1" step="0.05" /></label>
+    <label class="row">Dialogue volume <input id="set-dialogue" type="range" min="0" max="1" step="0.05" /></label>
+    <label class="row">Effects volume <input id="set-effects" type="range" min="0" max="1" step="0.05" /></label>
+    <label class="row">Reduced scare intensity <input id="set-reduced" type="checkbox" /></label>
+    <label class="row">Performance overlay <input id="set-perf" type="checkbox" /></label>
+        <button id="btn-audiotest">PLAY TEST SOUND</button>
+    <p id="audio-status" class="hint" style="margin-top: 10px; font-size: 11px"></p>
+    <label class="row">Subtitles <input id="set-subtitles" type="checkbox" /></label>
+    <label class="row">Reduce sudden audio <input id="set-soft" type="checkbox" /></label>
+    <label class="row">Music volume <input id="set-music" type="range" min="0" max="1" step="0.05" /></label>
+    <div style="height: 16px"></div>
+    <button id="btn-settings-back">BACK</button>
+  </div>
+
+  <div id="inspect" class="overlay">
+    <div class="box"><h2 id="inspect-title"></h2><p id="inspect-text"></p><p>Move the mouse to turn it · [E] put away</p></div>
+  </div>
+
+  <div id="keypad" class="overlay">
+    <h1 style="font-size: 20px">KEYPAD</h1>
+    <div id="kp-display"></div>
+    <div class="pad" id="kp-pad"></div>
+    <p class="hint"><button id="kp-close">CLOSE</button></p>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

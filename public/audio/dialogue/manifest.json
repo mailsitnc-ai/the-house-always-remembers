@@ -1,0 +1,495 @@
+{
+ "generated": "2026-11-01T16:06:04.562Z",
+ "clips": {
+  "phonecall#0": {
+   "file": "phonecall-0.m4a",
+   "duration": 0.943,
+   "voice": "daniel",
+   "text": "Hello?",
+   "hash": "7767856d9000"
+  },
+  "phonecall#1": {
+   "file": "phonecall-1.m4a",
+   "duration": 1.711,
+   "voice": "emily",
+   "text": "Hi. It's me.",
+   "hash": "3170284042a0"
+  },
+  "phonecall#2": {
+   "file": "phonecall-2.m4a",
+   "duration": 2.27,
+   "voice": "emily",
+   "text": "Why did you leave me, Daniel?",
+   "hash": "b3ba7bfe9f52"
+  },
+  "phonecall#3": {
+   "file": "phonecall-3.m4a",
+   "duration": 0.799,
+   "voice": "daniel",
+   "text": "Em?",
+   "hash": "3a9a51ac1e50"
+  },
+  "open-vo#0": {
+   "file": "open-vo-0.m4a",
+   "duration": 4.063,
+   "voice": "inner",
+   "text": "Eleven years. I stopped counting after the first.",
+   "hash": "76d90494884c"
+  },
+  "open-vo#1": {
+   "file": "open-vo-1.m4a",
+   "duration": 4.207,
+   "voice": "inner",
+   "text": "Em was eight. She followed me everywhere, and I let her.",
+   "hash": "e77a85a065f8"
+  },
+  "open-vo#2": {
+   "file": "open-vo-2.m4a",
+   "duration": 2.895,
+   "voice": "inner",
+   "text": "I told myself it was only a house.",
+   "hash": "7eb8367acb9b"
+  },
+  "return-vo#0": {
+   "file": "return-vo-0.m4a",
+   "duration": 3.311,
+   "voice": "inner",
+   "text": "The same gate. The same crooked step.",
+   "hash": "900e5f4291e4"
+  },
+  "return-vo#1": {
+   "file": "return-vo-1.m4a",
+   "duration": 4.478,
+   "voice": "inner",
+   "text": "Nobody has lived here for years. So why is there a light on?",
+   "hash": "1cdb44b6a19e"
+  },
+  "birthday#0": {
+   "file": "birthday-0.m4a",
+   "duration": 4.702,
+   "voice": "richard",
+   "text": "Right, everyone. Candles. Say cheese, Em.",
+   "hash": "b683e3205f46"
+  },
+  "birthday#1": {
+   "file": "birthday-1.m4a",
+   "duration": 3.885,
+   "voice": "emily",
+   "text": "Dan-Dan, blow with me! It's the bestest cake!",
+   "hash": "207eed51afbb"
+  },
+  "birthday#2": {
+   "file": "birthday-2.m4a",
+   "duration": 3.87,
+   "voice": "daniel",
+   "text": "You blow, it's your birthday. I'll hold the plate.",
+   "hash": "29d438e9bce0"
+  },
+  "birthday#3": {
+   "file": "birthday-3.m4a",
+   "duration": 4.189,
+   "voice": "emily",
+   "text": "'Cause I want you to. Pinky promise you'll do it with me.",
+   "hash": "a9cd70de7376"
+  },
+  "birthday#4": {
+   "file": "birthday-4.m4a",
+   "duration": 3.481,
+   "voice": "daniel",
+   "text": "Pinky promise. Go on, make a wish.",
+   "hash": "cc26abc01f78"
+  },
+  "christmas#0": {
+   "file": "christmas-0.m4a",
+   "duration": 4.397,
+   "voice": "emily",
+   "text": "Dan-Dan, look, look, LOOK! Santa ate the carrot!",
+   "hash": "886c52bd84e3"
+  },
+  "christmas#1": {
+   "file": "christmas-1.m4a",
+   "duration": 4.063,
+   "voice": "daniel",
+   "text": "It's just a carrot, Em. Mum probably did it.",
+   "hash": "84ac99c1d923"
+  },
+  "christmas#2": {
+   "file": "christmas-2.m4a",
+   "duration": 4.526,
+   "voice": "emily",
+   "text": "No she didn't! I'm not mad at you for saying it, but she didn't.",
+   "hash": "87bf31863d38"
+  },
+  "christmas#3": {
+   "file": "christmas-3.m4a",
+   "duration": 3.785,
+   "voice": "emily",
+   "text": "Can you read me the story tonight? The bestest one?",
+   "hash": "51ed4be51c72"
+  },
+  "christmas#4": {
+   "file": "christmas-4.m4a",
+   "duration": 2.463,
+   "voice": "daniel",
+   "text": "Fine. Pinky promise.",
+   "hash": "5ad04047b948"
+  },
+  "em3#0": {
+   "file": "em3-0.m4a",
+   "duration": 5.823,
+   "voice": "emily",
+   "text": "Okay, recording. This is Emily, and I'm eight. Dan-Dan, say hi.",
+   "hash": "5933da914a0c"
+  },
+  "em3#1": {
+   "file": "em3-1.m4a",
+   "duration": 1.583,
+   "voice": "daniel",
+   "text": "Em, not now.",
+   "hash": "191caad4e4ea"
+  },
+  "em3#2": {
+   "file": "em3-2.m4a",
+   "duration": 5.053,
+   "voice": "emily",
+   "text": "But you promised. You pinky promised we'd play the spy game after dinner.",
+   "hash": "cb47a8128f50"
+  },
+  "em3#3": {
+   "file": "em3-3.m4a",
+   "duration": 3.311,
+   "voice": "daniel",
+   "text": "I never said after dinner. I said maybe.",
+   "hash": "9de390616452"
+  },
+  "em3#4": {
+   "file": "em3-4.m4a",
+   "duration": 3.486,
+   "voice": "emily",
+   "text": "You PROMISED, Dan-Dan! Pinky promise!",
+   "hash": "34123eb328da"
+  },
+  "em3#5": {
+   "file": "em3-5.m4a",
+   "duration": 3.934,
+   "voice": "daniel",
+   "text": "Leave me alone, Em! I'm not your babysitter!",
+   "hash": "d9c0c3b2ea9e"
+  },
+  "em3#6": {
+   "file": "em3-6.m4a",
+   "duration": 2.51,
+   "voice": "emily",
+   "text": "You're mean. I'm telling Mummy.",
+   "hash": "3e0c1f8987eb"
+  },
+  "em3#7": {
+   "file": "em3-7.m4a",
+   "duration": 3.358,
+   "voice": "daniel",
+   "text": "Mum's not here. Fine. Tell her.",
+   "hash": "97adc062602a"
+  },
+  "em3#8": {
+   "file": "em3-8.m4a",
+   "duration": 6.575,
+   "voice": "emily",
+   "text": "I'm recording that you were mean. Recording that you were mean. Dan-Dan? Dan-Dan?",
+   "hash": "ff753f920176"
+  },
+  "fake#0": {
+   "file": "fake-0.m4a",
+   "duration": 2.429,
+   "voice": "fake",
+   "text": "Daniel, it's all right now.",
+   "hash": "f9c9f8f8d5b1"
+  },
+  "fake#1": {
+   "file": "fake-1.m4a",
+   "duration": 2.463,
+   "voice": "fake",
+   "text": "I forgive you, Dan-Dan.",
+   "hash": "5155a8ac161d"
+  },
+  "fake#2": {
+   "file": "fake-2.m4a",
+   "duration": 3.983,
+   "voice": "fake",
+   "text": "It was nobody's fault. You were only a child.",
+   "hash": "33f5ffc48a7f"
+  },
+  "fake#3": {
+   "file": "fake-3.m4a",
+   "duration": 3.821,
+   "voice": "fake",
+   "text": "Do you remember the bestest birthday, Dan-Dan?",
+   "hash": "f5061aaa4c82"
+  },
+  "fake#4": {
+   "file": "fake-4.m4a",
+   "duration": 3.535,
+   "voice": "fake",
+   "text": "Stay here with me, and don't remember the rest.",
+   "hash": "64011870382d"
+  },
+  "mem-sibling-photo#0": {
+   "file": "mem-sibling-photo-0.m4a",
+   "duration": 2.077,
+   "voice": "emily",
+   "text": "Dan-Dan, wait for me!",
+   "hash": "857814580fa7"
+  },
+  "mem-sibling-photo#1": {
+   "file": "mem-sibling-photo-1.m4a",
+   "duration": 4.623,
+   "voice": "inner",
+   "text": "She never walked anywhere with me. She ran, to keep up.",
+   "hash": "993a8dcc640b"
+  },
+  "mem-teddy#0": {
+   "file": "mem-teddy-0.m4a",
+   "duration": 7.247,
+   "voice": "inner",
+   "text": "I sewed that ear on at the kitchen table. She watched every stitch, and told me I was doing it wrong.",
+   "hash": "a88a901ceacd"
+  },
+  "mem-drawing#0": {
+   "file": "mem-drawing-0.m4a",
+   "duration": 5.247,
+   "voice": "emily",
+   "text": "That's you, and that's me, and that's Mummy and Daddy. We're all holding hands.",
+   "hash": "ad2c8668a655"
+  },
+  "mem-drawing#1": {
+   "file": "mem-drawing-1.m4a",
+   "duration": 3.694,
+   "voice": "inner",
+   "text": "We were always holding hands, in her drawings.",
+   "hash": "5beebb946cd1"
+  },
+  "mem-santa#0": {
+   "file": "mem-santa-0.m4a",
+   "duration": 5.727,
+   "voice": "emily",
+   "text": "And one for Dan-Dan too. I'll write it small, so Santa doesn't run out of room.",
+   "hash": "704d3966c031"
+  },
+  "mem-school#0": {
+   "file": "mem-school-0.m4a",
+   "duration": 4.703,
+   "voice": "inner",
+   "text": "Front row, grinning. I was happy then. We all were.",
+   "hash": "49df17237ecb"
+  },
+  "mem-chart#0": {
+   "file": "mem-chart-0.m4a",
+   "duration": 5.487,
+   "voice": "emily",
+   "text": "I read the most! Mrs Hale said so. I read the most in the whole class.",
+   "hash": "017ac042336f"
+  },
+  "mem-calendar#0": {
+   "file": "mem-calendar-0.m4a",
+   "duration": 6.685,
+   "voice": "inner",
+   "text": "Daniel in charge. Mum wrote it with two exclamation marks. She thought it was funny.",
+   "hash": "b36b7106a87d"
+  },
+  "mem-estate#0": {
+   "file": "mem-estate-0.m4a",
+   "duration": 8.398,
+   "voice": "inner",
+   "text": "Mum and Dad stopped speaking about it. Then they stopped speaking. Then the house just stood here, waiting to be sold.",
+   "hash": "18f4a69e24d3"
+  },
+  "room-foyer#0": {
+   "file": "room-foyer-0.m4a",
+   "duration": 5.181,
+   "voice": "inner",
+   "text": "Dad's coat is still on the hook. Eleven years, and nobody moved it.",
+   "hash": "a3cfb9ad80d4"
+  },
+  "room-living#0": {
+   "file": "room-living-0.m4a",
+   "duration": 8.671,
+   "voice": "inner",
+   "text": "Sunday afternoons in here. Dad with the paper, Mum with her feet up, Em lying on the rug drawing on the back of the post.",
+   "hash": "b3729945400c"
+  },
+  "room-kitchen#0": {
+   "file": "room-kitchen-0.m4a",
+   "duration": 8.782,
+   "voice": "inner",
+   "text": "Mum always left a note by the kettle. For years I thought that was what a family sounded like. Notes, and the kettle.",
+   "hash": "02cdb83fd875"
+  },
+  "room-emily#0": {
+   "file": "room-emily-0.m4a",
+   "duration": 3.263,
+   "voice": "inner",
+   "text": "They never cleared it. Of course they didn't.",
+   "hash": "4357664c6fa4"
+  },
+  "msgs12#0": {
+   "file": "msgs12-0.m4a",
+   "duration": 8.855,
+   "voice": "teacher",
+   "text": "Hello, it's Mrs Hale from school. Just to say the reading charts go home Friday, and Emily has read the most books in her class. Wonderful.",
+   "hash": "4e5ac25d0f26"
+  },
+  "msgs12#1": {
+   "file": "msgs12-1.m4a",
+   "duration": 7.375,
+   "voice": "nana",
+   "text": "Hello, poppets, it's Nana. Ring me on Sunday, and tell Em I found the book she wanted.",
+   "hash": "a91d3e6e8082"
+  },
+  "msg3#0": {
+   "file": "msg3-0.m4a",
+   "duration": 3.949,
+   "voice": "richard",
+   "text": "Daniel? It's Dad. Pick up if you're there.",
+   "hash": "028b8f0b10c7"
+  },
+  "msg3#1": {
+   "file": "msg3-1.m4a",
+   "duration": 7.629,
+   "voice": "richard",
+   "text": "Daniel? Okay. We're leaving at nine, we'll bring chips. Tell Em we love her. Bye.",
+   "hash": "6f8fbfaa9b9d"
+  },
+  "matron-hall#0": {
+   "file": "matron-hall-0.m4a",
+   "duration": 3.934,
+   "voice": "matron",
+   "text": "You have been walking such a long time, Daniel.",
+   "hash": "447869df528b"
+  },
+  "matron-hall#1": {
+   "file": "matron-hall-1.m4a",
+   "duration": 4.952,
+   "voice": "matron",
+   "text": "Come away from those papers. They only make you sad.",
+   "hash": "9954c1d2272d"
+  },
+  "matron-living#0": {
+   "file": "matron-living-0.m4a",
+   "duration": 3.775,
+   "voice": "matron",
+   "text": "I kept everything exactly as you left it.",
+   "hash": "2d5d79ab6899"
+  },
+  "matron-living#1": {
+   "file": "matron-living-1.m4a",
+   "duration": 4.238,
+   "voice": "matron",
+   "text": "Nobody blames you here. Nobody ever has.",
+   "hash": "47c305426d8e"
+  },
+  "matron-living#2": {
+   "file": "matron-living-2.m4a",
+   "duration": 3.567,
+   "voice": "matron",
+   "text": "Sit down. Let me take that weight.",
+   "hash": "2eb8f812277a"
+  },
+  "matron-gift#0": {
+   "file": "matron-gift-0.m4a",
+   "duration": 4.031,
+   "voice": "matron",
+   "text": "That was not kind, taking my gift apart.",
+   "hash": "e26780f59ad1"
+  },
+  "matron-gift#1": {
+   "file": "matron-gift-1.m4a",
+   "duration": 2.607,
+   "voice": "matron",
+   "text": "I only wanted you to rest.",
+   "hash": "5367fffee66d"
+  },
+  "matron-truth#0": {
+   "file": "matron-truth-0.m4a",
+   "duration": 5.518,
+   "voice": "matron",
+   "text": "You were upstairs. You were asleep. You did not hear a thing.",
+   "hash": "5962d982a5dd"
+  },
+  "matron-truth#1": {
+   "file": "matron-truth-1.m4a",
+   "duration": 5.135,
+   "voice": "matron",
+   "text": "Say it was an accident, Daniel. Say it, and rest.",
+   "hash": "7b96bb36a49d"
+  },
+  "matron-lamp#0": {
+   "file": "matron-lamp-0.m4a",
+   "duration": 5.903,
+   "voice": "matron",
+   "text": "Stand in the light as long as you like, Daniel. I am very patient.",
+   "hash": "523ced0313bb"
+  },
+  "matron-caught#0": {
+   "file": "matron-caught-0.m4a",
+   "duration": 5.071,
+   "voice": "matron",
+   "text": "There. You see? It is quiet, when you stop looking.",
+   "hash": "156d8fb5cee5"
+  },
+  "matron-night#0": {
+   "file": "matron-night-0.m4a",
+   "duration": 8.238,
+   "voice": "matron",
+   "text": "Leave the evening alone, Daniel. It is an old dark thing, and you will have to carry it for ever.",
+   "hash": "9861d33f2753"
+  },
+  "matron-door#0": {
+   "file": "matron-door-0.m4a",
+   "duration": 2.43,
+   "voice": "matron",
+   "text": "You may leave whenever you like.",
+   "hash": "22fd84115583"
+  },
+  "matron-door#1": {
+   "file": "matron-door-1.m4a",
+   "duration": 3.935,
+   "voice": "matron",
+   "text": "Say it was an accident, and the door will open.",
+   "hash": "3d9b5b91994b"
+  },
+  "whisper-promise#0": {
+   "file": "whisper-promise-0.m4a",
+   "duration": 5.819,
+   "voice": "whisper",
+   "text": "Pinky promise. Promise. Pinky promise. Promise.",
+   "hash": "f1ff7414cb7f"
+  },
+  "dictaphone#0": {
+   "file": "dictaphone-0.m4a",
+   "duration": 2.943,
+   "voice": "richard",
+   "text": "Saturday. Ten past six.",
+   "hash": "8ca3e80f512b"
+  },
+  "dictaphone#1": {
+   "file": "dictaphone-1.m4a",
+   "duration": 4.655,
+   "voice": "richard",
+   "text": "Anna says Daniel was in the house. She says we're not to ask him.",
+   "hash": "db63c8df241d"
+  },
+  "dictaphone#2": {
+   "file": "dictaphone-2.m4a",
+   "duration": 5.071,
+   "voice": "richard",
+   "text": "I keep going to the stairs to check on Emily, like it's a normal morning.",
+   "hash": "e5fd9d25ce14"
+  },
+  "dictaphone#3": {
+   "file": "dictaphone-3.m4a",
+   "duration": 3.901,
+   "voice": "richard",
+   "text": "Best leave it. For Daniel. Best leave it.",
+   "hash": "5a62892ac6fb"
+  }
+ }
+}
