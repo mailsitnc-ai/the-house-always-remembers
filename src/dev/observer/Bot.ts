@@ -241,6 +241,11 @@ export class Bot {
     let stuckFor = 0;
     while (i < path.length) {
       const dt = await this.frame();
+      // A scene that takes the controls (the finale starts when Daniel reaches Emily's room) ends the walk: waiting here would never return.
+      if (this.c.finale.busy) {
+        this.hold("KeyW", false);
+        return true;
+      }
       if (this.busy()) {
         this.hold("KeyW", false);
         continue;

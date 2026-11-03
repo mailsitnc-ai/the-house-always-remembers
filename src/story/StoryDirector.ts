@@ -46,6 +46,9 @@ export class StoryDirector {
   private readonly queue: { at: number; fn: () => void }[] = [];
   private clock = 0;
   private prologueActive = false;
+  private reminderId = "";
+  private reminderT = 0;
+  private reminderPoll = 0;
   private readonly spoken = new Set<string>();
   /** Phase 4 hook: called when the Matron chapter begins. Nothing is registered in Phase 3. */
   onMatronChapter: (() => void) | null = null;
@@ -178,6 +181,8 @@ export class StoryDirector {
     this.events.emit("cine:letterbox", { on: false });
     this.events.emit("controls:lock", { locked: false });
     this.state.set("prologue:done");
+    // The first moment of play: say how to move, once.
+    this.after(2, () => this.events.emit("toast", { text: "Move: W A S D   ·   Look: mouse   ·   Interact: E   ·   Torch: F   ·   Journal: J", ms: 8000 }));
   }
 
   /** Advances delayed actions. Runs on game time, so pausing the game pauses the story. */
@@ -191,6 +196,26 @@ export class StoryDirector {
     }
     this.recordings.update();
     this.updateHints(dt);
+    this.updateReminder(dt);
+  }
+
+  /** If the player has stayed on one objective for a minute and a half, show it again with its hint (and again every minute and a half). */
+  private updateReminder(dt: number): void {
+    if (this.prologueActive || !this.chapters.started || this.chapters.number < 2) return;
+    this.reminderPoll += dt;
+    if (this.reminderPoll < 1) return;
+    this.reminderPoll = 0;
+    const id = this.objectives.current().id;
+    if (id !== this.reminderId) {
+      this.reminderId = id;
+      this.reminderT = 0;
+      return;
+    }
+    this.reminderT += 1;
+    if (this.reminderT >= 90) {
+      this.reminderT = 0;
+      this.objectives.remind();
+    }
   }
 
   /**

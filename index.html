@@ -69,7 +69,10 @@
     #evidence-toast { position: fixed; left: 16px; bottom: 56px; font-size: 14px; letter-spacing: 0.04em; padding: 8px 12px; background: rgba(8, 6, 4, 0.8); border-left: 2px solid #b9a66e; opacity: 0; transform: translateX(-12px); transition: opacity 0.4s, transform 0.4s; pointer-events: none; }
     #evidence-toast.show { opacity: 1; transform: none; }
     #evidence-toast span { display: block; font-size: 11px; color: var(--dim); margin-top: 3px; letter-spacing: 0.15em; text-transform: uppercase; }
-    #objective { position: fixed; left: 16px; bottom: 16px; max-width: 46vw; font-size: 12px; line-height: 1.5; color: var(--dim); opacity: 0.35; transition: opacity 1.2s; pointer-events: none; text-shadow: 0 1px 6px #000; }
+    #objective { position: fixed; left: 16px; bottom: 16px; max-width: 46vw; font-size: 13px; line-height: 1.5; color: var(--dim); opacity: 0.6; transition: opacity 1.2s; pointer-events: none; text-shadow: 0 1px 6px #000; }
+    #objective .o-main { display: block; letter-spacing: 0.06em; }
+    #objective .o-hint { display: block; font-size: 11px; opacity: 0; max-height: 0; transition: opacity 1.2s; }
+    #objective.bright .o-hint { opacity: 0.8; max-height: 6em; }
     #objective.bright { opacity: 0.95; }
     #hint-keys { position: fixed; right: 16px; top: 38px; font-size: 11px; letter-spacing: 0.15em; color: var(--dim); opacity: 0.5; pointer-events: none; display: none; }
     .jbox { background: rgba(10, 8, 6, 0.96); border: 1px solid var(--line); width: min(980px, 94vw); max-height: 88vh; display: flex; flex-direction: column; text-align: left; }

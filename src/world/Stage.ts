@@ -9,6 +9,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Plane } from "@babylonjs/core/Maths/math.plane";
 import { buildReflection, type ReflectionFigure } from "../horror/CharacterBuilder";
+import { buildShroud } from "./EmilyShroud";
 
 /**
  * A small "reconstructed room", built far outside the house. The Matron can reconstruct rooms from memory, and the
@@ -18,6 +19,7 @@ import { buildReflection, type ReflectionFigure } from "../horror/CharacterBuild
  * The mirror is a real planar reflection, but it renders only this small room and only while the scene is on screen.
  */
 export const STAGE_ORIGIN = new Vector3(60, 0, 60);
+const MAT_TOP_Y = 0.54;
 const W = 3.4;
 const D = 3.8;
 const H = 2.5;
@@ -42,7 +44,7 @@ export class Stage {
   /** The spot the player stands on in each configuration. */
   readonly spawn = new Vector3(STAGE_ORIGIN.x, 1.65, STAGE_ORIGIN.z - 1.25);
   /** Where the hand lies in the chamber, for the camera to find. */
-  readonly handAt = new Vector3(STAGE_ORIGIN.x - 0.28, 0.62, STAGE_ORIGIN.z + 0.55);
+  readonly handAt = new Vector3(STAGE_ORIGIN.x - 0.08, 0.62, STAGE_ORIGIN.z + 1.0);
   readonly bedAt = new Vector3(STAGE_ORIGIN.x + 0.1, 0.5, STAGE_ORIGIN.z + 0.9);
 
   constructor(private readonly scene: Scene) {}
@@ -76,6 +78,30 @@ export class Stage {
     return s;
   }
 
+  /** The teddy bear from the bedroom (a real object, evidence of the memory it belongs to): seated against the pillow, arms and legs out. */
+  private teddy(list: Mesh[], fur: StandardMaterial, x: number, z: number): void {
+    const y = MAT_TOP_Y;
+    this.ball(list, "teddy-body", 0.15, 0.17, 0.13, fur, x, y + 0.085, z);
+    this.ball(list, "teddy-head", 0.115, 0.105, 0.1, fur, x, y + 0.215, z);
+    this.ball(list, "teddy-snout", 0.05, 0.04, 0.04, fur, x, y + 0.2, z - 0.055);
+    for (const s of [-1, 1]) {
+      this.ball(list, "teddy-ear", 0.04, 0.04, 0.022, fur, x + s * 0.045, y + 0.27, z);
+      this.ball(list, "teddy-arm", 0.045, 0.1, 0.045, fur, x + s * 0.095, y + 0.1, z - 0.02).rotation.z = s * 0.5;
+      this.ball(list, "teddy-leg", 0.06, 0.05, 0.095, fur, x + s * 0.055, y + 0.03, z - 0.09);
+    }
+  }
+
+  private readonly lit: TransformNode[] = [];
+
+  /**
+   * Lets the chamber's lamp light an entity (the Matron stands in this room for the confrontation). The lamp is restricted to the
+   * room's own meshes so it cannot leak into the house, which would otherwise leave her an unlit silhouette.
+   */
+  include(root: TransformNode): void {
+    this.lit.push(root);
+    if (this.lamp) this.lamp.includedOnlyMeshes = [...this.lamp.includedOnlyMeshes, ...root.getChildMeshes()];
+  }
+
   private build(): void {
     if (this.built) return;
     this.built = true;
@@ -84,9 +110,6 @@ export class Stage {
     const dark = this.mat("dark", "#18140f");
     const tile = this.mat("tile", "#9aa3a0", 0.07, 0.2);
     const white = this.mat("white", "#a9a499", 0.05);
-    const sheet = this.mat("sheet", "#8f8b80", 0.03);
-    const skin = this.mat("skin", "#a39c90", 0.05);
-    const faded = this.mat("faded", "#a87c86", 0.04);
     const wood = this.mat("wood", "#4a382a", 0.03);
     const brass = this.mat("brass", "#8a7442", 0.05, 0.3);
     const lav = this.mat("lavender", "#6b5f86", 0.05);
@@ -128,27 +151,26 @@ export class Stage {
     this.box(c, "bed-frame", 0.95, 0.3, 1.8, wood, bx, 0.25, bz);
     this.box(c, "mattress", 0.88, 0.14, 1.72, linen, bx, 0.47, bz);
     this.box(c, "pillow", 0.5, 0.1, 0.3, white, bx, 0.58, bz + 0.68);
-    // The sheet over a small shape: head, shoulders, body, legs. Nothing of her is shown but a hand.
-    this.ball(c, "sheet-head", 0.22, 0.2, 0.26, sheet, bx, 0.66, bz + 0.55);
-    this.ball(c, "sheet-shoulders", 0.36, 0.17, 0.2, sheet, bx, 0.6, bz + 0.34);
-    this.ball(c, "sheet-body", 0.3, 0.14, 0.62, sheet, bx, 0.57, bz - 0.05);
-    this.ball(c, "sheet-legs", 0.24, 0.1, 0.5, sheet, bx, 0.54, bz - 0.5);
-    // The hand, lying on top of the sheet at the edge, a faded ribbon at the wrist.
-    const hx = this.handAt.x - STAGE_ORIGIN.x;
-    const hz = this.handAt.z - STAGE_ORIGIN.z;
-    this.ball(c, "hand-palm", 0.06, 0.02, 0.08, skin, hx, 0.655, hz);
-    for (let i = 0; i < 4; i++) this.ball(c, "hand-finger", 0.012, 0.012, 0.055, skin, hx - 0.022 + i * 0.015, 0.655, hz - 0.075 - (i === 1 || i === 2 ? 0.01 : 0));
-    this.ball(c, "hand-thumb", 0.012, 0.012, 0.04, skin, hx + 0.045, 0.655, hz - 0.03);
-    const rib = this.put(c, MeshBuilder.CreateTorus("ribbon", { diameter: 0.05, thickness: 0.008, tessellation: 14 }, this.scene), faded, hx, 0.655, hz + 0.075);
-    rib.rotation.x = Math.PI / 2;
+    // A child lying on her back under a linen sheet, with one small hand outside it and a faded ribbon on her wrist.
+    const shroud = buildShroud(this.scene);
+    for (const mesh of shroud.meshes) {
+      mesh.position.addInPlace(new Vector3(STAGE_ORIGIN.x, 0, STAGE_ORIGIN.z));
+      mesh.setEnabled(false);
+      mesh.receiveShadows = false;
+      c.push(mesh);
+    }
+    this.handAt.copyFrom(shroud.handAt).addInPlace(new Vector3(STAGE_ORIGIN.x, 0, STAGE_ORIGIN.z));
     // A teddy at the pillow, a hairbrush, a brass dish, folded linen, and dried lavender: someone has been looking after her.
-    this.ball(c, "teddy-body", 0.14, 0.16, 0.12, fur, bx + 0.32, 0.64, bz + 0.7);
-    this.ball(c, "teddy-head", 0.1, 0.1, 0.09, fur, bx + 0.32, 0.77, bz + 0.7);
+    this.teddy(c, fur, bx + 0.33, bz + 0.6);
     this.box(c, "nightstand", 0.4, 0.5, 0.35, wood, -0.85, 0.25, 1.55);
     this.box(c, "brush", 0.05, 0.02, 0.16, wood, -0.85, 0.52, 1.5);
     this.ball(c, "dish", 0.14, 0.03, 0.14, brass, -0.7, 0.52, 1.6);
     this.box(c, "linen-stack", 0.3, 0.12, 0.22, linen, -0.85, 0.6, 1.7);
-    for (let i = 0; i < 5; i++) this.put(c, MeshBuilder.CreateCylinder("lavender", { height: 0.3, diameter: 0.012, tessellation: 5 }, this.scene), lav, bx - 0.3 + i * 0.012, 0.75, bz + 0.15).rotation.z = 0.3 - i * 0.12;
+    for (let i = 0; i < 5; i++) {
+      const sprig = this.put(c, MeshBuilder.CreateCylinder("lavender", { height: 0.3, diameter: 0.012, tessellation: 5 }, this.scene), lav, bx - 0.27 + i * 0.012, 0.575, bz + 0.34 + i * 0.01);
+      sprig.rotation.x = Math.PI / 2;
+      sprig.rotation.y = (i - 2) * 0.05;
+    }
     this.box(c, "chair", 0.4, 0.45, 0.4, wood, 1.1, 0.22, 0.3);
     this.box(c, "door-frame", 0.9, 2.0, 0.06, dark, 0, 1.0, -D / 2 + 0.06);
 
@@ -157,8 +179,7 @@ export class Stage {
     this.box(r, "r-bed", 0.95, 0.3, 1.8, wood, bx, 0.25, bz);
     this.box(r, "r-mattress", 0.88, 0.14, 1.72, linen, bx, 0.47, bz);
     this.box(r, "r-pillow", 0.5, 0.1, 0.3, white, bx, 0.58, bz + 0.68);
-    this.ball(r, "r-teddy-body", 0.14, 0.16, 0.12, fur, bx + 0.32, 0.64, bz + 0.7);
-    this.ball(r, "r-teddy-head", 0.1, 0.1, 0.09, fur, bx + 0.32, 0.77, bz + 0.7);
+    this.teddy(r, fur, bx + 0.33, bz + 0.6);
     this.box(r, "r-nightstand", 0.4, 0.5, 0.35, wood, -0.85, 0.25, 1.55);
 
     this.lamp = new PointLight("stage-lamp", new Vector3(STAGE_ORIGIN.x - 0.85, 0.95, STAGE_ORIGIN.z + 1.55), this.scene);
@@ -167,6 +188,7 @@ export class Stage {
     this.lamp.intensity = 0;
     this.lamp.includedOnlyMeshes = [...s, ...m, ...c, ...r];
 
+    for (const r of this.lit) this.lamp.includedOnlyMeshes = [...this.lamp.includedOnlyMeshes, ...r.getChildMeshes()];
     this.figure = buildReflection(this.scene);
     this.figure.root.position.set(STAGE_ORIGIN.x, 0, STAGE_ORIGIN.z - 1.0);
     this.lamp.includedOnlyMeshes = [...this.lamp.includedOnlyMeshes, ...this.figure.meshes];

@@ -17,6 +17,8 @@ export class Hollow extends Entity {
   private hitTime = 0;
   /** Seconds of flashlight it has endured; it breaks up when this reaches the limit. */
   exposure = 0;
+  /** Progressive horror level, 0 (a hollow-chested figure) to 3 (barely a figure at all). */
+  corruption = 0;
 
   constructor(scene: Scene) {
     const fig = buildHollow(scene);
@@ -24,6 +26,13 @@ export class Hollow extends Entity {
     this.fig = fig;
     this.maxVisibility = 0.95;
     this.fadeRate = 2.2;
+  }
+
+  setCorruption(c: number): void {
+    this.corruption = c;
+    this.fig.rig?.set(c);
+    // The more of it is gone, the less of it there is to see.
+    this.maxVisibility = 0.95 - 0.2 * Math.min(1, c / 3);
   }
 
   protected override heightHint(): number {

@@ -55,7 +55,7 @@ export class StoryUi {
     events.on("chapter:changed", (c) => {
       if (!c.restored) this.showChapter(c.number, c.title);
     });
-    events.on("objective:current", ({ text, remind }) => this.setObjective(text, remind));
+    events.on("objective:current", ({ text, hint, remind }) => this.setObjective(text, hint, remind));
     events.on("evidence:added", ({ title, optional }) => {
       this.notice(`${optional ? "Optional evidence" : "Evidence"} added: ${title}`);
       this.audio.journalNote();
@@ -235,9 +235,9 @@ export class StoryUi {
   private objectiveTimer = 0;
 
   /** One quiet line at the bottom of the screen. It brightens when it changes, then fades back. */
-  private setObjective(text: string, bright = true): void {
+  private setObjective(text: string, hint: string, bright = true): void {
     const o = el("objective");
-    o.textContent = text;
+    o.innerHTML = `<span class="o-main">${esc(text)}</span>${hint ? `<span class="o-hint">${esc(hint)}</span>` : ""}`;
     if (!bright) return;
     o.classList.add("bright");
     window.clearTimeout(this.objectiveTimer);
@@ -370,7 +370,7 @@ export class StoryUi {
   private objectiveTab(): string {
     const cur = this.story.objectives.current();
     const done = this.story.objectives.completed();
-    return `<div class="mem refuted"><div class="stat">What to do now</div><p class="said">${esc(cur.text)}</p></div>${
+    return `<div class="mem refuted"><div class="stat">What to do now</div><p class="said">${esc(cur.text)}</p>${cur.hint ? `<p class="because">${esc(cur.hint)}</p>` : ""}</div>${
       done.length ? `<h3 style="font-weight:normal;letter-spacing:.1em;margin:18px 0 6px">Done</h3>` + done.map((t) => `<div class="because">${esc(t)}</div>`).join("") : ""
     }`;
   }

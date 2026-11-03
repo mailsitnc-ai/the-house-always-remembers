@@ -1,0 +1,5 @@
+15:33:22  watching docs/full-story-demo/video; waiting for a run to start (up to 300s)
+15:33:26  run detected: docs/full-story-demo/video/r20261103-153326-progress.json
+15:33:26  chapter 1; objective: ; game clock 4s; evidence 0; fps 75
+15:34:06  chapter 2; objective: Go into the living room.; game clock 43.9s; evidence 0; fps 83
+16:13:52  WATCHDOG FAILURE: no chapter/objective/evidence progress for 901s of wall time; chapter 2; objective: Read Mum's note in the kitchen.

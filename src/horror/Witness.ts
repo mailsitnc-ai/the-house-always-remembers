@@ -23,6 +23,8 @@ export class Witness extends Entity {
   private goal: { x: number; z: number } | null = null;
   /** Seconds the player has been looking at it. */
   gaze = 0;
+  /** Progressive horror level, 0 (a quiet figure with a photograph) to 3 (its form comes apart). It never becomes aggressive. */
+  corruption = 0;
   /** Where the camera is; set by the director each frame so the head can react. */
   private seen = false;
 
@@ -38,6 +40,11 @@ export class Witness extends Entity {
 
   protected override heightHint(): number {
     return 1.8;
+  }
+
+  setCorruption(c: number): void {
+    this.corruption = c;
+    this.apply();
   }
 
   appear(x: number, z: number, level: 0 | 1, towardX: number, towardZ: number): void {
@@ -90,15 +97,23 @@ export class Witness extends Entity {
     const goalPitch = this.bowing ? 0.95 : this.seen ? 0.55 : 0.12;
     this.fig.head.rotation.x += (goalPitch - this.fig.head.rotation.x) * Math.min(1, dt * 1.4);
     if (this.bowing) this.bow = Math.min(1, this.bow + dt * 0.4);
-    this.fig.photoArm.rotation.x = this.bowing ? this.bow * 0.9 : Math.sin(this.clock * 0.5) * 0.015;
+    // Later it lifts the photograph, little by little, to where its face should be, and the hand begins to shake.
+    const c = this.corruption;
+    const lift = Math.min(1, Math.max(0, (c - 0.8) / 2.2)) * 1.0;
+    this.fig.photoArm.rotation.x = this.bowing ? this.bow * 0.9 : -lift + Math.sin(this.clock * 0.5) * 0.015 + 0.025 * c * Math.sin(this.clock * 9.3) * Math.sin(this.clock * 1.1);
+    // Its head twitches, and its body is never quite the same shape twice.
+    this.fig.head.rotation.z = c * 0.05 * Math.sin(this.clock * 0.9) * Math.sin(this.clock * 7.3);
     // The exposure slips every few seconds: the afterimage jumps aside and settles back.
     this.nextSlip -= dt;
     if (this.nextSlip <= 0) {
       this.slip = 1;
-      this.nextSlip = 3.5 + Math.random() * 3.5;
+      this.nextSlip = (3.5 + Math.random() * 3.5) / (1 + 1.1 * this.corruption);
+      if (this.corruption > 0.5) this.root.position.x += (Math.random() - 0.5) * 0.05 * this.corruption;
     }
     this.slip = Math.max(0, this.slip - dt * 1.3);
-    const off = 0.1 + this.slip * 0.34;
+    const off = 0.1 + 0.05 * c + this.slip * (0.34 + 0.22 * c);
+    this.fig.body.scaling.set(1 + 0.03 * c * this.slip, 1 + 0.02 * c * this.slip, 1);
+    this.ghost.body.scaling.set(1 + 0.05 * c * this.slip, 1 + 0.07 * c, 1);
     this.ghost.root.position.set(this.root.position.x + Math.cos(this.root.rotation.y) * off, this.root.position.y, this.root.position.z - Math.sin(this.root.rotation.y) * off);
     this.ghost.root.rotation.y = this.root.rotation.y + 0.05 + this.slip * 0.1;
     this.ghost.head.rotation.x = this.fig.head.rotation.x + 0.06;
@@ -108,7 +123,7 @@ export class Witness extends Entity {
 
   protected override apply(): void {
     for (const m of this.fig.meshes) m.visibility = this.fade;
-    for (const m of this.ghost.meshes) m.visibility = this.fade * 0.38;
+    for (const m of this.ghost.meshes) m.visibility = this.fade * Math.min(0.75, 0.38 + 0.13 * this.corruption);
   }
 
   override warm(on: boolean): void {

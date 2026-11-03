@@ -127,6 +127,7 @@ export class Finale {
     this.run = null;
     this.wait = null;
     this.skipping = false;
+    this.holdChoices = false;
     this.mirrorT = -1;
     this.d.events.emit("choices:hide", {});
     this.d.events.emit("subtitle:clear", {});
@@ -163,9 +164,9 @@ export class Finale {
       else if ("rec" in w) this.d.story.recordings.play(w.rec, 0.15);
       else if ("choose" in w) {
         this.skipping = false;
-        const round = ROUNDS[this.currentRound];
-        this.choices = round.choices(factsOf(this.d.story.evidence, this.d.state));
-        this.d.events.emit("choices:show", { choices: this.choices });
+        // The choices wait for the Matron's transformation to finish, however quickly the scene was skipped to here.
+        if (this.transformPending()) this.holdChoices = true;
+        else this.showChoices();
       } else {
         this.waitLeft = w.glide.t;
         this.glideFrom = { pos: this.cam.pos.clone(), yaw: this.cam.yaw, pitch: this.cam.pitch };
@@ -175,6 +176,22 @@ export class Finale {
   }
 
   private currentRound: Round["id"] = "offer";
+  private holdChoices = false;
+
+  /**
+   * The choices wait for the Matron's transformation. This is decided by the story (the chamber scene), not by her animation level, so a scene that
+   * has been skipped through at once, before her level has even risen, is still held until the 21-second sequence has finished.
+   */
+  private transformPending(): boolean {
+    const m = this.d.horror.matron;
+    return m.visible && this.d.state.get("finale:chamber") && !m.transformFinished;
+  }
+
+  private showChoices(): void {
+    const round = ROUNDS[this.currentRound];
+    this.choices = round.choices(factsOf(this.d.story.evidence, this.d.state));
+    this.d.events.emit("choices:show", { choices: this.choices });
+  }
 
   private onChoice(id: string): void {
     if (!isChoose(this.wait)) return;
@@ -195,6 +212,7 @@ export class Finale {
     this.clock += dt;
     for (let i = this.jobs.length - 1; i >= 0; i--) if (this.jobs[i].at <= this.clock) this.jobs.splice(i, 1)[0].fn();
     if (!this.run) return;
+    this.d.horror.stageUpdate(dt);
     const w = this.wait;
     if (typeof w === "number") {
       this.waitLeft -= dt;
@@ -209,6 +227,10 @@ export class Finale {
         this.glideFrom = null;
         this.advance();
       }
+    }
+    if (this.holdChoices && !this.transformPending()) {
+      this.holdChoices = false;
+      this.showChoices();
     }
     if (this.mirrorT >= 0) this.updateMirror(dt);
     // The camera is ours for the whole scene, whichever wait is active.
@@ -357,7 +379,8 @@ export class Finale {
     // The Matron has been standing in the doorway.
     this.d.horror.matron.appear(O.x, O.z - 1.7, 0, 0, 2.6);
     // Daniel turns around: she is standing in the doorway behind him.
-    yield { glide: { yaw: Math.PI - 0.08, pitch: 0.04, t: 3.2 } };
+    // (Daniel is at O.x - 0.75, she is at O.x: she is about 30 degrees off the line he was facing, at the very edge of his torch's beam. He turns to her.)
+    yield { glide: { yaw: Math.atan2(0.75, -1.25), pitch: -0.2, t: 3.2 } };
     yield 1.5;
     yield { rec: "fin-reveal-3" };
     yield 1;

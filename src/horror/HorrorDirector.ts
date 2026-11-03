@@ -20,6 +20,7 @@ import { Veil } from "./Veil";
 import { DISTURBANCES } from "./Disturbances";
 import { buildEncounters, type Encounter } from "./Encounters";
 import { Jumpscares } from "./Jumpscares";
+import { corruptionStage } from "./Corruption";
 
 export interface HorrorDeps {
   scene: Scene;
@@ -72,6 +73,13 @@ export class HorrorDirector {
   /** Reduced scare intensity: no visual jolts, quieter stingers. Set from the settings. */
   reduced = false;
   readonly jumpscares: Jumpscares;
+  /** Progressive horror: how far the presentation has failed, 0 (composed) to 3 (true form). Eased toward a story-derived target. */
+  corruption = 0;
+  /** Development tools only: forces a level (and applies it at once). Null in the game. */
+  corruptionOverride: number | null = null;
+  private corrTarget = 0;
+  private corrApplied = -1;
+  private corrPoll = 0;
 
   private readonly encounters: Encounter[];
   private readonly veils = new Map<string, Veil>();
@@ -257,9 +265,19 @@ export class HorrorDirector {
 
   // ---- main loop -------------------------------------------------------------------------------
 
+  /**
+   * For scenes that switch the director off (the finale): the Matron still has to fade in, move and change, and the story-derived level (the chamber
+   * scene is what raises it to the true form) has to keep following the story. Nothing else of the director runs.
+   */
+  stageUpdate(dt: number): void {
+    this.updateCorruption(dt);
+    if (this.matron.visible) this.matron.update(dt, this.pos);
+  }
+
   update(dt: number): void {
     if (!this.enabled) return;
     this.clock += dt;
+    this.updateCorruption(dt);
     const { player } = this.deps;
     this.matron.update(dt, this.pos);
     this.hollow.update(dt);
@@ -294,6 +312,39 @@ export class HorrorDirector {
       this.chooseEncounter();
       if (!this.active) this.maybeDisturb();
     }
+  }
+
+  // ---- progressive horror -----------------------------------------------------------------------
+
+  /** The story-derived target, eased toward slowly (a few seconds per step) so a transformation is seen, never a pop. */
+  private updateCorruption(dt: number): void {
+    this.corrPoll += dt;
+    if (this.corrPoll > 0.5) {
+      this.corrPoll = 0;
+      // From what Daniel has found and done, never from a timer, and it never goes back down.
+      this.corrTarget = Math.max(this.corrTarget, corruptionStage(this.deps.story.evidence, this.deps.state) - 1);
+    }
+    const target = this.corruptionOverride ?? this.corrTarget;
+    const rate = target > this.corruption ? (target >= 3 ? 0.6 : 0.3) : 1;
+    this.corruption += Math.max(-rate * dt, Math.min(rate * dt, target - this.corruption));
+    if (Math.abs(this.corruption - this.corrApplied) > 0.002) this.applyCorruption();
+    // The first time the Matron changes into her true form is remembered, so a loaded game shows the finished form and does not play it again.
+    if (this.matron.transforming && !this.deps.state.get("seen:true-form")) this.deps.state.set("seen:true-form");
+  }
+
+  private applyCorruption(): void {
+    this.corrApplied = this.corruption;
+    this.matron.setCorruption(this.corruption);
+    this.witness.setCorruption(this.corruption);
+    this.hollow.setCorruption(this.corruption);
+    this.unremembered.setCorruption(this.corruption);
+  }
+
+  /** Jumps to a level at once (loading a save, and development screenshots). */
+  setCorruptionNow(c: number, override = false): void {
+    this.corruption = c;
+    if (override) this.corruptionOverride = c;
+    this.applyCorruption();
   }
 
   private floorFor(p: Vector3): number {
@@ -371,6 +422,10 @@ export class HorrorDirector {
     this.jumpscares.restore(s.scares);
     this.chapterStart.set(this.chapter, this.clock);
     this.active = null;
+    // A loaded game shows the same presentation it was saved with, from the first frame.
+    this.corrTarget = corruptionStage(this.deps.story.evidence, this.deps.state) - 1;
+    this.setCorruptionNow(this.corrTarget);
+    if (this.corrTarget >= 2.5 && this.deps.state.get("seen:true-form")) this.matron.skipTransformation();
   }
 
   /** Starts the final hunt (chapter 8). The pursuit repeats, with pauses, until the player reaches Emily's room. */
@@ -449,12 +504,15 @@ export class HorrorDirector {
       }
       return;
     }
-    if (this.clock - this.lastWitness < 20 || this.active || this.chapter < 3 || this.tension > 0.6) return;
+    // The first sighting is never held back by tension or a cooldown: it is a story beat, not a random scare.
+    if (this.clock - this.lastWitness < 20 || this.active || this.chapter < 3 || (this.firstWitnessShown && this.tension > 0.6)) return;
     const room = this.room();
+    // The first sighting is the one in Emily's room, so it can be introduced properly. If the recorder was already taken
+    // before chapter 3, that sighting can no longer happen and the first one is simply the next place it guards.
+    const firstAtRecorder = !story.evidence.has("emily-recorder");
     for (const s of WITNESS_SPOTS) {
       if (s.room !== room || this.witnessDone.has(s.evidence) || story.evidence.has(s.evidence)) continue;
-      // The very first sighting is always the one in Emily's room, so it can be introduced properly.
-      if (!this.firstWitnessShown && s.evidence !== "emily-recorder") continue;
+      if (!this.firstWitnessShown && firstAtRecorder && s.evidence !== "emily-recorder") continue;
       // Seen from a distance: the first sighting is across the room, never close.
       if (Math.hypot(this.pos.x - s.at[0], this.pos.z - s.at[1]) < (this.firstWitnessShown ? 1.8 : 3.2)) continue;
       w.appear(s.at[0], s.at[1], s.level, s.faces[0], s.faces[1]);

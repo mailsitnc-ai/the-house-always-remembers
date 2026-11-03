@@ -19,7 +19,7 @@ export interface GameEvents {
   "save:done": { kind: "auto" | "manual" };
   "ending:start": { id: string };
   "cine:reveal": { on: boolean };
-  "objective:current": { id: string; text: string; remind: boolean };
+  "objective:current": { id: string; text: string; hint: string; remind: boolean };
   "finale:arrived": Record<string, never>;
   "choices:show": { choices: { id: string; text: string }[] };
   "choices:hide": Record<string, never>;

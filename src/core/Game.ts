@@ -9,6 +9,7 @@ import { AudioManager } from "../atmosphere/AudioManager";
 import { LightingManager } from "../atmosphere/LightingManager";
 import { Flashlight } from "../atmosphere/Flashlight";
 import { HorrorDirector } from "../horror/HorrorDirector";
+import { Guide } from "../world/Guide";
 import { PlayerController } from "../player/PlayerController";
 import { InteractionSystem } from "../player/InteractionSystem";
 import { InspectionSystem } from "../player/InspectionSystem";
@@ -36,7 +37,9 @@ import { factsOf } from "../story/Endings";
  * opened with `?observer`. In a production build `import.meta.env.DEV` is false, so this is constant-folded away together with
  * everything it imports, and the normal game is untouched.
  */
-const OBSERVER: boolean = import.meta.env.DEV && typeof location !== "undefined" && new URLSearchParams(location.search).has("observer");
+const OBSERVER: boolean = import.meta.env.DEV && typeof location !== "undefined" && (new URLSearchParams(location.search).has("observer") || new URLSearchParams(location.search).has("demo"));
+/** Developer-only entity showcase: dev server and `?showcase` only, constant-folded away in production. */
+const SHOWCASE: boolean = import.meta.env.DEV && typeof location !== "undefined" && new URLSearchParams(location.search).has("showcase");
 
 const WARM: [number, number, number] = [0.032, 0.022, 0.013];
 const COLD: [number, number, number] = [0.012, 0.019, 0.03];
@@ -61,6 +64,7 @@ export class Game {
   private readonly player: PlayerController;
   private readonly flashlight: Flashlight;
   private horror!: HorrorDirector;
+  private guide!: Guide;
   private readonly interaction: InteractionSystem;
   private readonly inspection: InspectionSystem;
   private readonly puzzles: PuzzleSystem;
@@ -145,10 +149,13 @@ export class Game {
       story: this.story,
       interaction: this.interaction,
     });
+    this.guide = new Guide(this.scene, this.events, this.interaction, this.player, this.registry);
     this.perf.mark("horror-ready");
 
     this.stage = new Stage(this.scene);
-    this.save = new SaveSystem({ capture: () => this.captureSave(), apply: (d) => this.applySave(d) }, OBSERVER ? "thar.observer" : undefined);
+    // The Matron stands in the chamber for the confrontation: its lamp must be able to light her.
+    this.stage.include(this.horror.matron.root);
+    this.save = new SaveSystem({ capture: () => this.captureSave(), apply: (d) => this.applySave(d) }, OBSERVER ? "thar.observer" : SHOWCASE ? "thar.showcase" : undefined);
     this.finale = new Finale({
       events: this.events,
       state: this.state,
@@ -314,6 +321,12 @@ export class Game {
     this.engine.runRenderLoop(() => this.scene.render());
 
     void this.prepare();
+    if (import.meta.env.DEV && SHOWCASE) {
+      // Developer-only entity showcase (see dev/showcase/Showcase.ts). Dead code in a production build.
+      void import("../dev/showcase/Showcase").then(({ Showcase }) => {
+        (window as unknown as { __showcase: unknown }).__showcase = new Showcase({ scene: this.scene, engine: this.engine, horror: this.horror, stage: this.stage, player: this.player, lighting: this.lighting, flashlight: this.flashlight });
+      });
+    }
     if (import.meta.env.DEV && OBSERVER) {
       void import("../dev/observer/Observer").then(({ Observer }) => {
         this.observer = new Observer({
@@ -617,6 +630,7 @@ export class Game {
     else this.story.recordings.update();
     if (live) {
       this.house.update(dt);
+      if (this.phase === "playing") this.guide.update(dt);
       const roomName = this.registry.currentRoom ? ROOM_BY_ID[this.registry.currentRoom].name : undefined;
       this.perf.frame(this.engine.getDeltaTime(), roomName);
     }

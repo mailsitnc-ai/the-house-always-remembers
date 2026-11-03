@@ -1,10 +1,7 @@
 import type { Scene } from "@babylonjs/core/scene";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { fragmentTexture } from "./CharacterBuilder";
+import { buildFragment, fragmentMaterial } from "./models/FragmentModel";
 import { floorHeight } from "../world/Layout";
 
 interface Fragment {
@@ -13,29 +10,50 @@ interface Fragment {
   clock: number;
   phase: number;
   gaze: number;
+  /** Height in metres (the model is one metre tall and is scaled). */
+  h: number;
 }
 
 /**
- * Pieces of memories that were never finished. Each is a pale cut-out of a small figure, torn into strips, that repeats a
- * short stutter in place: a step back, a turn, a step back again. They are not Emily and they do not come closer. They
- * only repeat, and they go if you look straight at them for long enough.
+ * Pieces of memories that were never finished. Each is a pale figure cut into thin slices that have slipped sideways, with some
+ * slices missing, and it repeats a short stutter in place: a step aside, a snap back. They are not Emily and they do not come
+ * closer. They only repeat, and they go if you look straight at them for long enough.
  */
 export class Unremembered {
   private readonly fragments: Fragment[] = [];
-  private readonly mats: StandardMaterial[] = [];
+  /** Prototypes by level (0 early .. 3 finale) and variant, made the first time a level is needed. */
+  private readonly protos: (Mesh[] | null)[] = [null, null, null, null];
+  private readonly mat: ReturnType<typeof fragmentMaterial>;
+  private count_ = 0;
+  /** Progressive horror level, 0 (clean slices) to 3 (a fragment that can hardly be reconstructed). */
+  corruption = 0;
+  private readonly scene: Scene;
 
-  constructor(private readonly scene: Scene) {
-    for (let v = 0; v < 3; v++) {
-      const m = new StandardMaterial(`m-fragment-${v}`, scene);
-      const t = fragmentTexture(scene, v, 40 + v);
-      m.diffuseTexture = t;
-      m.useAlphaFromDiffuseTexture = true;
-      m.emissiveTexture = t;
-      m.disableLighting = true;
-      m.backFaceCulling = false;
-      m.diffuseColor = Color3.Black();
-      this.mats.push(m);
+  constructor(scene: Scene) {
+    this.scene = scene;
+    this.mat = fragmentMaterial(scene);
+    this.protoFor(0);
+  }
+
+  private get level(): number {
+    return Math.max(0, Math.min(3, Math.round(this.corruption)));
+  }
+
+  private protoFor(level: number): Mesh[] {
+    let list = this.protos[level];
+    if (!list) {
+      list = [0, 1, 2].map((v) => {
+        const p = buildFragment(this.scene, v, level);
+        p.material = this.mat;
+        return p;
+      });
+      this.protos[level] = list;
     }
+    return list;
+  }
+
+  setCorruption(c: number): void {
+    this.corruption = c;
   }
 
   get count(): number {
@@ -43,12 +61,14 @@ export class Unremembered {
   }
 
   spawn(variant: number, x: number, z: number, level: 0 | 1, height = 1.05): void {
-    const mesh = MeshBuilder.CreatePlane(`fragment-${this.fragments.length}`, { width: height * 0.5, height }, this.scene);
-    mesh.material = this.mats[variant % this.mats.length];
+    const list = this.protoFor(this.level);
+    const mesh = list[variant % list.length].clone(`fragment-${this.count_++}`);
+    mesh.setEnabled(true);
     mesh.isPickable = false;
-    mesh.position.set(x, floorHeight(x, z, level * 3) + height / 2, z);
+    mesh.scaling.set(height, height * (1 + 0.1 * this.level), height);
+    mesh.position.set(x, floorHeight(x, z, level * 3), z);
     mesh.visibility = 0;
-    this.fragments.push({ mesh, home: { x, z }, clock: Math.random() * 3, phase: Math.random() * 6, gaze: 0 });
+    this.fragments.push({ mesh, home: { x, z }, clock: Math.random() * 3, phase: Math.random() * 6, gaze: 0, h: height });
   }
 
   clear(): void {
@@ -75,12 +95,11 @@ export class Unremembered {
       // Face the player around the vertical axis only, in small jumps so it never feels smooth.
       const yaw = Math.atan2(camPos.x - f.mesh.position.x, camPos.z - f.mesh.position.z) + Math.PI;
       f.mesh.rotation.y = Math.round(yaw * 3) / 3;
-      const flicker = Math.sin(f.clock * 23 + f.phase) > 0.8 ? 0.2 : 1;
-      f.mesh.visibility = Math.min(f.mesh.visibility + dt * 0.8, 0.9 * flicker);
-      // Looking straight at one for a while makes it go.
-      // Judge the view cone mostly in the horizontal plane: a small figure sits well below eye level.
+      const flicker = Math.sin(f.clock * 23 + f.phase) > 0.8 ? 0.25 : 1;
+      f.mesh.visibility = Math.min(f.mesh.visibility + dt * 0.8, 0.92 * flicker);
+      // Looking straight at one for a while makes it go. The view cone is judged mostly in the horizontal plane.
       const to = f.mesh.position.subtract(camPos);
-      const ty = to.y * 0.3;
+      const ty = (to.y + f.h * 0.5) * 0.3;
       const d = Math.hypot(to.x, ty, to.z);
       const seen = d > 0.1 && (to.x * camForward.x + ty * camForward.y + to.z * camForward.z) / d > 0.9;
       const near = Math.hypot(to.x, to.z);
