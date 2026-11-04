@@ -70,7 +70,7 @@ export const EVIDENCE: EvidenceDef[] = [
     where: "Study, the family album",
     summary: "The same photograph, the same stamp, No. 0412. Four people.",
     detail:
-      "From the family album: the same step, the same lab stamp, No. 0412. A man, a woman, a boy of about twelve and a girl of about seven. Nobody stands behind them. The door at their backs is shut, and the step beside it is empty.",
+      "From the family album: the same step, the same lab stamp, No. 0412. A man, a woman, a boy of about thirteen and a girl of about eight. Nobody stands behind them. The door at their backs is shut, and the step beside it is empty.",
     thought: "There's no one behind us. There never was.",
   },
   // ---- the evening ----

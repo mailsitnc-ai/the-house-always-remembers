@@ -120,3 +120,5 @@ Supersedes the ending descriptions above. Canon: `STORY_BIBLE.md` sections 6, 7.
 Chase made grabbable (10-second arrow struggle, escape, per-grab clock), the true-ending puzzle guided step by step, a global subtitle safe area clear of the cinematic bars, the reflection's final stage and Emily's body reworked, the Observer bot playing the real chase, and the production bundle checked for developer code. Details, tests and limits are in the sign-off file.
 
 Follow-up (verification and deployment): the True route was rerun on the final code and passed; chase fairness, pointer-release, save-during-grab and subtitle sizes were checked; the objective bar moved to the top-left so it never overlaps subtitles. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 14.
+
+Second follow-up: the family photograph (a second two-children frame beside it was being opened instead), collision audit tool and a stuck-recovery key, consistency fixes. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 16.

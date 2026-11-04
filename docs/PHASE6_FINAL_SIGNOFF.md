@@ -113,3 +113,32 @@ Built and served with `vite preview`: the menu showed NEW GAME, SETTINGS, CREDIT
 ### Not verified
 - Chapters 3-8 objectives in a normal game were **not** played this pass; the Chapter 8 and True Ending objective texts were observed earlier (previous passes) in the DOM through Observer runs, and the new styling was not re-checked on those exact texts. The longest hints wrap within the 520 px plate by CSS but were not screenshotted.
 - Playing the production or deployed game past the title card (pointer lock), by me. The owner has played it in Chrome.
+
+## 16. Photograph, collisions, consistency and objective follow-up
+
+### Photograph (root cause and fix)
+- **Cause (observed by rendering the painter's output):** the living room had **two** frames on its west wall 1.4 m apart: the family photograph (`family-five`: four people plus the fifth figure) and a second "Framed photograph" of **Daniel and Emily only** (`siblings`). The opening cinematic also shows the two children. A player sent to "the family photograph" could open the wrong one. In the siblings picture Daniel was also drawn with adult proportions (no adult beside him to show his age).
+- **Fix** (`PhotoPainter.ts`, `GroundFloor.ts`, `StoryData.ts`): Daniel and Emily get child proportions (bigger head, narrower shoulders; Daniel 13, Emily 8); the second living-room frame now shows the house from the lane (empty); the album-print description now says "a boy of about thirteen and a girl of about eight" (it said twelve and seven). The fifth figure stays only in the living-room frame; the album print and the other family prints show four people; the True Ending's replacement print shows four.
+- **Observed** (rendered canvases): family-five shows Dad, Mum, Daniel, Emily and the dark fifth figure; family shows the four only; siblings now reads as a boy and a girl. **Observed in a fresh normal New Game** (dev server): the prompt "[E] Examine photograph" appears at the wall, E opens the inspection view with the whole print visible and uncropped, E closes it, and the objective moves from "Examine the family photograph." to "Read Mum's note in the kitchen." with no stall.
+- The objective plate now hides during the full-screen inspection view so it cannot cover a corner of what is being read.
+
+### Collision and softlock audit (automated, real collision system)
+- New dev-only tool `src/dev/CollisionAudit.ts` (`await __debug.audit()`, absent from production): a 0.3 m grid over both floors (1,656 ground and 992 upper cells), real ellipsoid collision, doors open. Results: **0 trap points**: every one-way step found (43 ground, 44 upstairs, all in the dining room, kitchen, living room, study, bathroom and the two bedrooms) has a way out, checked with a 0.1 m search; the stairs walk up and down; **60 of 63** interactive objects can be picked from a reachable spot (the other three are the suitcase letters, which only exist after the suitcase is opened, and were read in the earlier Observer runs). Sealed pockets (open floor the player cannot enter, e.g. between furniture) exist in every room: they cannot trap anyone because they cannot be entered.
+- No collider needed changing.
+- Limits: 2-D grid at eye height with doors open; closed-door and Matron-chase doorway collisions were not re-tested; furniture was not individually inspected by eye.
+- **Recovery** (`src/player/Recovery.ts`, `Game.ts`): if movement keys are held for 3 s with less than 0.12 m of movement a toast says "Stuck? Press U to step free."; U moves Daniel at most 1.6 m to the nearest open spot in the same room and floor in line of sight (never through walls, never within 2.5 m of the Matron, not during a scene or a grab), and changes nothing else. Tested automatically: the guard fires after about 4 s of blocking and never while moving or idle; stepFree moved Daniel 0.4-0.8 m to an open spot from six wedge positions on both floors. The full key-to-toast path was not seen in a running game (the browser pane pauses the game when hidden).
+
+### World consistency audit
+- Evidence versus rooms: all 22 evidence items with a physical object are in the room their journal entry names (script, observed). The tape and recorder evidence has no `read:` object by design (decks).
+- Objective hints versus the house (source plus positions): kettle and note (kitchen), Emily's door (west, first from the stairs top), study east of the foyer, album in the study: consistent.
+- Chapter conditions reference existing evidence: consistent.
+- Found and fixed: the second living-room portrait; the album-print ages (twelve/seven vs thirteen/eight); the siblings painting's adult-sized Daniel.
+- Not audited exhaustively: every line of dialogue against what the player has seen; entity-before-introduction timing in each chapter.
+
+### Normal gameplay and Chapter 8
+- Observed in a fresh normal New Game (dev server, real menu click, real keys, pointer lock bypassed by the dev `play()` hook): the opening objective with hint; "Examine the family photograph." in the living room; E opens the inspection; the objective changes to the kitchen note on close.
+- Chapter 8, Observer routes on the final code (automation, muted): **True** reached `door-tried`, `photo-seen`, `print`, `anchor`, `ending:true`, credits, BYE BYE and the menu; the six puzzle objectives and WALK OUT appeared in order and the objective cleared when the credits began. **Denial**: grab 1 escaped, grab 2 held 10 s, WATCH, `ending:denial`. **Recognition**: first grab escaped, second held, LISTEN, `ending:recognition`. (In Recognition the bot evaded for about 100 s before the first grab, so a runner who keeps moving can stay ahead.)
+### Production build
+Typecheck and build clean; the bundle has no Observer, audit, debug or checkpoint code; the preview menu shows NEW GAME, SETTINGS, CREDITS with the Observer URL parameters, no `__debug`, 0 failed requests, and the new "U step free if stuck" hint.
+### Still needs a human
+Playing in Chrome (pointer lock), chair-by-chair collision feel, closed-door and chase-doorway collisions, the U recovery in a running game, audio, real Mac performance.

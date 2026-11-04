@@ -28,6 +28,7 @@ import { StoryUi } from "../ui/StoryUi";
 import { CHAPTERS } from "../story/StoryData";
 import type { BenchRow } from "./PerfMonitor";
 import { SaveSystem, type SaveData } from "../platform/SaveSystem";
+import { StuckGuard, stepFree } from "../player/Recovery";
 import { Stage } from "../world/Stage";
 import { Finale } from "../story/Finale";
 import { factsOf } from "../story/Endings";
@@ -326,6 +327,16 @@ export class Game {
           if (prevDoors) for (const [id, open] of Object.entries(prevDoors)) this.house.doors[id]?.setOpen(open);
           return out;
         },
+        /** Developer-only collision/softlock audit against the real collision system (see dev/CollisionAudit.ts). */
+        audit: async () => {
+          const { auditCollisions } = await import("../dev/CollisionAudit");
+          this.registry.beginWarmUp();
+          try {
+            return auditCollisions({ camera: this.player.camera, house: this.house, interaction: this.interaction, setBase: (b) => this.player.setBase(b) });
+          } finally {
+            this.registry.endWarmUp();
+          }
+        },
         story: this.story,
         horror: this.horror,
         registry: this.registry,
@@ -613,6 +624,25 @@ export class Game {
     return [cancelled ? "(stopped early)" : "Benchmark walk complete", info, "times in ms", head, ...lines].join("\n");
   }
 
+  private readonly stuck = new StuckGuard();
+  private stuckOffered = false;
+
+  /** If the player has been pushing against something for a few seconds without moving, say how to step free; U does it (never during a scene or a grab, never near her). */
+  private recovery(dt: number): void {
+    const keys = ["KeyW", "KeyA", "KeyS", "KeyD"].some((k) => this.input.isDown(k));
+    const p = this.player.position;
+    if (this.stuck.update(dt, keys, p.x, p.z)) {
+      this.stuckOffered = true;
+      this.events.emit("toast", { text: "Stuck? Press U to step free.", ms: 4000 });
+    }
+    if (!this.input.wasPressed("KeyU") || !this.stuckOffered || this.finale.busy || this.finale.grabbed) return;
+    const m = this.horror.matron;
+    const near = m.state !== "hidden" ? { x: m.root.position.x, z: m.root.position.z } : null;
+    const moved = stepFree(this.scene, this.player, near);
+    this.events.emit("toast", { text: moved ? "You step free." : "There is nowhere safe to step to here.", ms: 2500 });
+    this.stuckOffered = !moved;
+  }
+
   private update(): void {
     const dt = Math.min(this.engine.getDeltaTime() / 1000, 0.05) * (this.observer?.timeScale ?? 1);
     if (this.input.wasPressed("F3")) {
@@ -638,6 +668,7 @@ export class Game {
       this.player.update(dt, true);
       this.interaction.update(true);
       if (this.input.wasPressed("KeyF")) this.flashlight.toggle();
+      this.recovery(dt);
       if (this.input.wasPressed("Space") || this.input.wasPressed("Enter")) this.horror.skipCine();
       if (this.input.wasPressed("KeyJ")) this.events.emit("journal:open", {});
       if (!this.benchmark.active) this.horror.update(dt);

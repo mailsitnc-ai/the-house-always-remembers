@@ -149,6 +149,8 @@ export class StoryUi {
     el("journal").classList.toggle("show", phase === "journal");
     el("recorder").classList.toggle("show", phase === "recorder");
     el("hint-keys").style.display = phase === "playing" ? "block" : "none";
+    // The close inspection of an object (a photograph, a letter) is a full-screen view: the objective steps aside so it never covers the corner of what is being read.
+    el("objective").style.opacity = phase === "inspecting" ? "0" : "";
   }
 
   // ---- chapter card, thoughts, notices ---------------------------------------------------------

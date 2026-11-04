@@ -190,3 +190,9 @@ Required: the true ending must show this, and must not read as Daniel punishing 
 
 
 **Chase update (final polish pass).** In the Chapter 8 chase the Matron can now take hold of Daniel; he has ten seconds to break her grip (a short sequence of arrows). Breaking free resumes the chase; being held for the full ten seconds ends it and the evidence-based ending (Denial or Recognition, see `docs/ENDINGS.md`) follows. Ending canon is unchanged.
+
+## The family photographs (visual specification, final polish)
+- Taken on the front step of the house eleven years before the game: **Dad, Mum, Daniel (13) and Emily (8)**, the same four faces in every print (`CAST` in `src/world/PhotoPainter.ts`). Daniel and Emily are drawn with a child's proportions.
+- **Living-room frame** (west wall, the one the opening objective sends the player to): the four of them **plus the fifth figure**, tall, dark, in the doorway shadow behind them. Pencil on the back: "The step, summer. All of us." Lab stamp No. 0412.
+- **Original print** (study album) and the other family prints (upstairs landing): the **same four only**, the door shut, the step empty. The Matron never altered the print; the fifth figure exists only in the framed copy on the wall. In the True Ending the print replaces the framed copy and the wall then shows four.
+- The second frame that used to hang beside it in the living room (two children) was mistaken for the family photograph; it now shows the house from the lane, empty. The two-children photograph remains in the opening and upstairs (evidence `siblings-photo`).

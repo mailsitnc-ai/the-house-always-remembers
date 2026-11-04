@@ -149,7 +149,8 @@ export class GroundFloor {
     const table = furn.tableLamp("living-lamp", lampF, R, { on: false, interactive: true, intensity: 1.5, range: 7.5 });
     void table;
     decor.photo([0.1, 1.55, 3.75], [1, 0], [0.3, 0.38], "family-five", R, "Family photograph", "Five figures on the front step in summer light. On the backing paper, in pencil: 'The step, summer. All of us.' A photo-lab stamp: No. 0412.", "living-photo");
-    decor.photo([0.1, 1.55, 5.15], [1, 0], [0.26, 0.34], "siblings", R, "Framed photograph", "Two children on a front step, the smaller one holding the other's sleeve.");
+    // Not a second portrait beside the family photograph (it was mistaken for it): this frame shows the house itself. The two-children photograph stays upstairs and in the opening.
+    decor.photo([0.1, 1.55, 5.15], [1, 0], [0.34, 0.26], "house", R, "Framed photograph", "The house from the lane, in summer. Nobody is in it.");
 
     new TapeDeck(ctx, b.frame(cabF.at([0.42, 0.9, -0.02]), PI / 2, [R]), "living", "deck", R);
     // Radio, clock, bookshelf.

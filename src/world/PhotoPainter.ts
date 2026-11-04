@@ -24,14 +24,16 @@ interface Person {
   bottom: string;
   dress?: boolean;
   tie?: string;
+  /** A child (Daniel at thirteen, Emily at eight): a bigger head for the body, narrower shoulders. */
+  child?: boolean;
 }
 
 /** The family, fixed. Only age (scale) and clothes change between photographs. */
 const CAST = {
   dad: { id: "dad", skin: "#d8a98b", shade: "#a87458", hair: "#4a3526", style: "side", scale: 1, top: "#3b5a73", bottom: "#3a3a3f" } as Person,
   mum: { id: "mum", skin: "#e3b8a1", shade: "#b98068", hair: "#6c4a33", style: "bob", scale: 0.92, top: "#4f6b4a", bottom: "#55463a" } as Person,
-  daniel: { id: "daniel", skin: "#dcab8d", shade: "#aa765b", hair: "#2f241c", style: "messy", scale: 0.76, top: "#8a3a33", bottom: "#33384a" } as Person,
-  emily: { id: "emily", skin: "#e7bba4", shade: "#b9826a", hair: "#80603d", style: "pigtails", scale: 0.55, top: "#d8c4a0", bottom: "#d8c4a0", dress: true } as Person,
+  daniel: { id: "daniel", skin: "#dcab8d", shade: "#aa765b", hair: "#2f241c", style: "messy", scale: 0.74, top: "#8a3a33", bottom: "#33384a", child: true } as Person,
+  emily: { id: "emily", skin: "#e7bba4", shade: "#b9826a", hair: "#80603d", style: "pigtails", scale: 0.55, top: "#d8c4a0", bottom: "#d8c4a0", dress: true, child: true } as Person,
 };
 
 function rng(seed: number): () => number {
@@ -74,13 +76,14 @@ interface Pose {
 
 /** Draws one person standing with their feet at (x, feet). `h` is full height in pixels. */
 function person(c: Ctx, p: Person, x: number, feet: number, h: number, pose: Pose, light = 1): void {
-  const headH = h * (p.scale < 0.7 ? 0.2 : 0.15);
+  const kid = p.child || p.scale < 0.7;
+  const headH = h * (p.scale < 0.7 ? 0.2 : kid ? 0.18 : 0.15);
   const headW = headH * 0.78;
   const legH = h * 0.46;
   const torsoH = h * 0.32;
   const hipY = feet - legH;
   const shoulderY = hipY - torsoH;
-  const shoulderW = h * (p.id === "dad" ? 0.2 : p.scale < 0.7 ? 0.14 : 0.17);
+  const shoulderW = h * (p.id === "dad" ? 0.2 : kid ? 0.145 : 0.17);
   const neckY = shoulderY - h * 0.02;
   const headY = neckY - headH * 0.55;
 
@@ -398,8 +401,8 @@ function composeSiblings(c: Ctx, w: number, h: number, r: () => number): void {
   blurBackground(c, w, h, 4);
   const feet = h * 0.95;
   const big = h * 0.9;
-  person(c, { ...CAST.daniel, top: "#3f5a52", scale: 0.85 }, w * 0.38, feet, big * 0.85, { armL: [-0.02, 0.5], armR: [0.16, 0.46], mood: "soft", tilt: 0.03, look: 0.5 });
-  person(c, { ...CAST.emily, top: "#c9b896", bottom: "#c9b896" }, w * 0.66, feet, big * 0.62, { armL: [-0.16, 0.2], armR: [0.02, 0.5], mood: "grin", tilt: -0.06 });
+  person(c, { ...CAST.daniel, top: "#3f5a52" }, w * 0.38, feet, big * 0.8, { armL: [-0.02, 0.5], armR: [0.16, 0.46], mood: "soft", tilt: 0.03, look: 0.5 });
+  person(c, { ...CAST.emily, top: "#c9b896", bottom: "#c9b896" }, w * 0.66, feet, big * 0.6, { armL: [-0.16, 0.2], armR: [0.02, 0.5], mood: "grin", tilt: -0.06 });
 }
 
 function composeSchool(c: Ctx, w: number, h: number, r: () => number): void {

@@ -44,3 +44,6 @@ She stops pretending: the 21-second true-form transformation plays in full, then
 
 ## Test routes (dev only)
 Chapter 8 only, from the checkpoint, each in its own save slot: `?demo&timer&ending=true`, `&ending=denial`, `&ending=recognition` (see `docs/HOW_TO_WATCH.md`). The denial and recognition links play the real confrontation with the answers listed there, then run through the dark rooms away from her, break free of the first grab, run again, and let the second grab's ten seconds run out. The true link also breaks free of its first grab, then runs the puzzle. `&test=chase` (with `&resume`) skips the confrontation and sets story flags; it is a test shortcut, not a demonstration.
+
+## Photographs and the fifth figure (final polish)
+The living-room frame shows Dad, Mum, Daniel (13) and Emily (8) **and the fifth figure**; the original print in the study album and the other family prints show the same four only (the Matron never altered the print). In the True Ending the print replaces the framed copy and the wall shows four. See `STORY_BIBLE.md`.

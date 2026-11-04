@@ -39,3 +39,6 @@ The older whole-story routes (`?demo&observer=denial`, `?observer=true`) still e
 Chapter 8 changed after the recording in section A: the confrontation now ends in a chase and a front-door puzzle (see `docs/ENDINGS.md`). The recorded footage shows the earlier version.
 
 The recorded videos (`docs/full-story-demo/video*/`, hundreds of MB) are kept locally only and are not in the GitHub repository; `watch.html` needs them.
+
+## Developer collision audit
+With the dev server running, open any page (no `?demo` needed) and, in the browser console, run `await __debug.audit()`. It walks the real collision system over every floor and reports embedded points, sealed pockets, one-way steps (with a check that the player can always get out), the stairs both ways and whether every interactive object can be picked from a reachable spot. Development only: `__debug` does not exist in the production build.
