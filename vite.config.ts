@@ -14,7 +14,7 @@ const showcaseSave = (): Plugin => ({
       const q = new URL(req.url ?? "", "http://x").searchParams;
       const name = q.get("name") ?? "";
       const folder = q.get("dir") ?? "entity-reference-v2";
-      if (req.method !== "POST" || !/^[a-z0-9-]+\.png$/.test(name) || !["entity-reference", "entity-reference-v2", "entity-reference-v3", "progressive-horror", "matron-true-form", "matron-transformation", "matron-transformation-verification"].includes(folder)) {
+      if (req.method !== "POST" || !/^[a-z0-9-]+\.png$/.test(name) || !["entity-reference", "entity-reference-v2", "entity-reference-v3", "progressive-horror", "matron-true-form", "matron-transformation", "matron-transformation-verification", "house-map"].includes(folder)) {
         res.statusCode = 400;
         res.end("bad request");
         return;

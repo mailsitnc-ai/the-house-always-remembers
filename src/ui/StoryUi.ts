@@ -108,7 +108,8 @@ export class StoryUi {
     events.on("choices:hide", () => el("choices").classList.remove("show"));
     events.on("card", (c) => this.showCard(c));
     events.on("credits:show", ({ ending }) => {
-      // The ending is over: the objective goes with it, and stays gone.
+      // The ending is over: the objective goes with it, and stays gone (a later flag change must not bring it back over the telephone scene).
+      this.objectiveOff = ending !== "menu";
       this.setObjective("", "", false);
       this.showCredits(ending);
     });
@@ -150,7 +151,7 @@ export class StoryUi {
     el("recorder").classList.toggle("show", phase === "recorder");
     el("hint-keys").style.display = phase === "playing" ? "block" : "none";
     // The close inspection of an object (a photograph, a letter) is a full-screen view: the objective steps aside so it never covers the corner of what is being read.
-    el("objective").style.opacity = phase === "inspecting" ? "0" : "";
+    el("objective").style.opacity = phase === "inspecting" || phase === "map" ? "0" : "";
   }
 
   // ---- chapter card, thoughts, notices ---------------------------------------------------------
@@ -273,8 +274,11 @@ export class StoryUi {
   private objectiveTimer = 0;
 
   /** One quiet line at the bottom of the screen. It brightens when it changes, then fades back. */
+  private objectiveOff = false;
+
   private setObjective(text: string, hint: string, bright = true): void {
     const o = el("objective");
+    if (this.objectiveOff) text = "";
     o.innerHTML = text ? `<span class="o-label">OBJECTIVE</span><span class="o-main">${esc(text)}</span>${hint ? `<span class="o-hint">${esc(hint)}</span>` : ""}` : "";
     if (!bright) return;
     o.classList.add("bright");

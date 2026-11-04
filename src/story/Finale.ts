@@ -160,7 +160,7 @@ export class Finale {
 
   private beginHunt(): void {
     this.d.horror.beginHunt();
-    this.d.events.emit("objective", { text: "She has stopped pretending. Get to Emily's room upstairs. She will not follow you into lamplight." });
+    this.d.events.emit("objective", { text: "She has stopped pretending. Get to Emily's room upstairs. She will not follow you into lamplight.", room: "emily" });
   }
 
   // ---- running scenes ----------------------------------------------------------------------------
@@ -574,7 +574,7 @@ export class Finale {
     if (state.get("finale:anchor")) {
       this.chase.stop();
       this.d.horror.matron.vanish();
-      events.emit("objective", { text: "OPEN THE FRONT DOOR", hint: "Nothing holds it now. The door is in the foyer." });
+      events.emit("objective", { text: "OPEN THE FRONT DOOR", hint: "Nothing holds it now. The door is in the foyer.", room: "foyer" });
     } else this.puzzleObjective();
     this.chase.markSafe();
     this.chase.lightHall();
@@ -597,12 +597,12 @@ export class Finale {
     const { state, events } = this.d;
     this.stageT = 0;
     this.plainShown = plain;
-    const o = (text: string, hint: string): void => events.emit("objective", { text, hint });
-    if (state.get("finale:anchor")) o("OPEN THE FRONT DOOR", "Nothing holds it now. The door is in the foyer.");
-    else if (state.get("finale:print")) o("PUT THE TRUTH WHERE THE LIE HANGS", plain ? "Go to the living room. Use the photograph on the wall: swap it for the original print you are carrying." : "The picture in the living room has a fifth figure in it. You are holding the one that does not.");
-    else if (state.get("finale:photo-seen")) o("FIND THE ORIGINAL PRINT", plain ? "The photo album is in the study. Take out the original print of the front step." : "The same front step was photographed twice. The original is kept with the family's other pictures.");
-    else if (state.get("finale:door-tried")) o("FIND WHAT HOLDS HER TO THE HOUSE", plain ? "Go to the living room and look closely at the family photograph on the wall." : "The door is not locked from outside: it is being held shut from in here. She was added to something the family keeps on display.");
-    else o("TRY THE FRONT DOOR", "She cannot enter the light. The foyer is lit, and the front door is the way out.");
+    const o = (text: string, hint: string, room?: string): void => events.emit("objective", { text, hint, room });
+    if (state.get("finale:anchor")) o("OPEN THE FRONT DOOR", "Nothing holds it now. The door is in the foyer.", "foyer");
+    else if (state.get("finale:print")) o("PUT THE TRUTH WHERE THE LIE HANGS", plain ? "Go to the living room. Use the photograph on the wall: swap it for the original print you are carrying." : "The picture in the living room has a fifth figure in it. You are holding the one that does not.", "living");
+    else if (state.get("finale:photo-seen")) o("FIND THE ORIGINAL PRINT", plain ? "The photo album is in the study. Take out the original print of the front step." : "The same front step was photographed twice. The original is kept with the family's other pictures.", plain ? "study" : undefined);
+    else if (state.get("finale:door-tried")) o("FIND WHAT HOLDS HER TO THE HOUSE", plain ? "Go to the living room and look closely at the family photograph on the wall." : "The door is not locked from outside: it is being held shut from in here. She was added to something the family keeps on display.", plain ? "living" : undefined);
+    else o("TRY THE FRONT DOOR", "She cannot enter the light. The foyer is lit, and the front door is the way out.", "foyer");
   }
 
   private stageT = 0;
@@ -699,7 +699,7 @@ export class Finale {
     this.after(4.2, () => {
       for (const l of lighting.allLamps) l.setOn(["foyer-light", "living-lamp-light", "desk-lamp-light"].includes(l.light.name));
       events.emit("thought", { text: "The house is quiet. It has never been this quiet." });
-      events.emit("objective", { text: "OPEN THE FRONT DOOR", hint: "Nothing holds it now. The door is in the foyer." });
+      events.emit("objective", { text: "OPEN THE FRONT DOOR", hint: "Nothing holds it now. The door is in the foyer.", room: "foyer" });
       audio.click();
     });
     this.d.save.write();

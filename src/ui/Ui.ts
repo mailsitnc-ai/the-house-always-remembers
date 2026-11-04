@@ -15,6 +15,7 @@ export interface UiHandlers {
   audioStatus(): string;
   onBenchmark(): void;
   onJournal(): void;
+  onMap(): void;
   onContinue(): void;
   onSave(): boolean;
   onToMenu(): void;
@@ -71,6 +72,7 @@ export class Ui {
     });
     el("btn-bench").addEventListener("click", () => handlers.onBenchmark());
     el("btn-journal").addEventListener("click", () => handlers.onJournal());
+    el("btn-map").addEventListener("click", () => handlers.onMap());
     el("btn-audiotest").addEventListener("click", () => {
       handlers.onTestSound();
       window.setTimeout(() => this.refreshAudioStatus(), 400);

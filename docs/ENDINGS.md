@@ -47,3 +47,6 @@ Chapter 8 only, from the checkpoint, each in its own save slot: `?demo&timer&end
 
 ## Photographs and the fifth figure (final polish)
 The living-room frame shows Dad, Mum, Daniel (13) and Emily (8) **and the fifth figure**; the original print in the study album and the other family prints show the same four only (the Matron never altered the print). In the True Ending the print replaces the framed copy and the wall shows four. See `STORY_BIBLE.md`.
+
+## Objective locations on the house map
+The map rings the objective room only when the objective text names it: the foyer for TRY THE FRONT DOOR and OPEN THE FRONT DOOR, the living room for PUT THE TRUTH WHERE THE LIE HANGS, and the study or living room for the two earlier puzzle steps only after their plainer hint appears. Ending objectives (WALK OUT, WATCH, LISTEN) have no ring, and the objective clears when the credits start.

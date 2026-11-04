@@ -42,3 +42,7 @@ The recorded videos (`docs/full-story-demo/video*/`, hundreds of MB) are kept lo
 
 ## Developer collision audit
 With the dev server running, open any page (no `?demo` needed) and, in the browser console, run `await __debug.audit()`. It walks the real collision system over every floor and reports embedded points, sealed pockets, one-way steps (with a check that the player can always get out), the stairs both ways and whether every interactive object can be picked from a reachable spot. Development only: `__debug` does not exist in the production build.
+
+## Player controls (current)
+WASD move · Shift run · mouse look · **E** interact · **F** flashlight · **J** journal · **M** house map · **U** step free if stuck · Esc pause · F3 performance overlay.
+**House map:** M (or "OPEN HOUSE MAP" in the pause menu) opens a plan of the house and pauses the game; M or Esc closes it. It opens on the floor you are standing on; click GROUND FLOOR / UPPER FLOOR, or press **1** / **2** (arrow up/down or Tab also switch). It shows your position and the way you face, the rooms you have been in (the others are dimmer), the stairs, doors, and a ring on the objective's room, only when the objective's own text names the place. Screenshots: `docs/house-map/`.

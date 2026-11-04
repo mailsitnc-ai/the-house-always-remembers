@@ -29,6 +29,7 @@ import { CHAPTERS } from "../story/StoryData";
 import type { BenchRow } from "./PerfMonitor";
 import { SaveSystem, type SaveData } from "../platform/SaveSystem";
 import { StuckGuard, stepFree } from "../player/Recovery";
+import { MapUi } from "../ui/MapUi";
 import { Stage } from "../world/Stage";
 import { Finale } from "../story/Finale";
 import { factsOf } from "../story/Endings";
@@ -219,6 +220,10 @@ export class Game {
           this.setPhase("journal");
           this.events.emit("journal:open", {});
         },
+        onMap: () => {
+          this.overlayReturn = "paused";
+          this.events.emit("map:open", {});
+        },
         onBenchmark: () => {
           this.benchPending = true;
           this.lockPointer();
@@ -229,6 +234,12 @@ export class Game {
     );
     this.settingsUi = ui;
     this.storyUi = new StoryUi(this.events, this.story, this.audio, () => this.closeOverlay());
+    new MapUi(this.events, {
+      player: () => ({ x: this.player.position.x, z: this.player.position.z, level: this.player.floorBase > 1.5 ? 1 : 0, yaw: this.player.camera.rotation.y }),
+      discovered: (room) => this.state.get(`visited:${room}`) || this.registry.currentRoom === room,
+      objective: () => ({ room: (this.story.objectives.current().room as RoomId | undefined) ?? null }),
+      onClose: () => this.closeOverlay(),
+    });
     this.events.on("phase:changed", ({ to }) => this.storyUi.showPhase(to));
     this.events.on("controls:lock", ({ locked }) => (this.controlsLocked = locked));
     this.events.on("cine:dolly", ({ on }) => (this.dolly = on));
@@ -252,6 +263,13 @@ export class Game {
       if (this.phase === "playing") {
         this.overlayReturn = "playing";
         this.setPhase("journal");
+        document.exitPointerLock();
+      }
+    });
+    this.events.on("map:open", () => {
+      if (this.phase === "playing" || this.phase === "paused") {
+        if (this.phase === "playing") this.overlayReturn = "playing";
+        this.setPhase("map");
         document.exitPointerLock();
       }
     });
@@ -584,7 +602,7 @@ export class Game {
     const locked = document.pointerLockElement === this.canvas;
     if (locked) {
       if (["menu", "paused", "keypad", "resuming"].includes(this.phase)) this.setPhase("playing");
-      else if (this.phase === "journal" || this.phase === "recorder") this.setPhase("playing");
+      else if (this.phase === "journal" || this.phase === "recorder" || this.phase === "map") this.setPhase("playing");
       if (this.benchPending) {
         this.benchPending = false;
         this.startBenchmark();
@@ -671,6 +689,7 @@ export class Game {
       this.recovery(dt);
       if (this.input.wasPressed("Space") || this.input.wasPressed("Enter")) this.horror.skipCine();
       if (this.input.wasPressed("KeyJ")) this.events.emit("journal:open", {});
+      if (this.input.wasPressed("KeyM")) this.events.emit("map:open", {});
       if (!this.benchmark.active) this.horror.update(dt);
     } else if (this.phase === "inspecting") {
       this.inspection.update();

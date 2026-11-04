@@ -1,4 +1,4 @@
-export type GamePhase = "loading" | "menu" | "playing" | "paused" | "inspecting" | "keypad" | "resuming" | "journal" | "recorder";
+export type GamePhase = "loading" | "menu" | "playing" | "paused" | "inspecting" | "keypad" | "resuming" | "journal" | "recorder" | "map";
 
 export interface GameEvents {
   "phase:changed": { from: GamePhase; to: GamePhase };
@@ -19,7 +19,7 @@ export interface GameEvents {
   "save:done": { kind: "auto" | "manual" };
   "ending:start": { id: string };
   "cine:reveal": { on: boolean };
-  "objective:current": { id: string; text: string; hint: string; remind: boolean };
+  "objective:current": { id: string; text: string; hint: string; remind: boolean; room?: string };
   "finale:arrived": Record<string, never>;
   "choices:show": { choices: { id: string; text: string }[] };
   "choices:hide": Record<string, never>;
@@ -27,7 +27,7 @@ export interface GameEvents {
   "card": { title: string; text: string; ms: number } | { title: null };
   "credits:show": { ending: string };
   "credits:done": Record<string, never>;
-  "objective": { text: string; hint?: string };
+  "objective": { text: string; hint?: string; room?: string };
   /** The Matron's proximity during the chase (0 = far or Daniel is in the light, 1 = at his shoulder). */
   "chase:danger": { level: number };
   /** The grab struggle. `on` false hides it. `keys` are arrow glyphs; `done` is how many are cleared. */
@@ -39,6 +39,7 @@ export interface GameEvents {
   "recording:started": { id: string };
   "recording:ended": { id: string };
   "journal:open": { tab?: string };
+  "map:open": Record<string, never>;
   "recorder:open": { deckId: string };
   "controls:lock": { locked: boolean };
   "story:end": Record<string, never>;

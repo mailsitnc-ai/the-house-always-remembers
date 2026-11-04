@@ -11,6 +11,22 @@
     .overlay { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--panel); }
     .overlay.show { display: flex; }
     .overlay { z-index: 6; }
+    #map { z-index: 7; background: rgba(6, 4, 3, 0.94); }
+    #map .mapbox { width: min(940px, 96vw); max-height: 96vh; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    #map .maphead { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    #map .mtitle { letter-spacing: 0.35em; font-size: 18px; }
+    #map .mtabs { display: flex; gap: 6px; }
+    #map .mtabs button, #map .mclose { padding: 6px 14px; font-size: 12px; letter-spacing: 0.14em; border-color: transparent; }
+    #map .mtabs button.on { border-color: var(--line); background: rgba(217, 207, 180, 0.1); }
+    #map .mtabs button.you::after { content: " ▲"; color: #f6edd0; }
+    #map .mtabs button.goal::before { content: "◎ "; color: #e0b64a; }
+    #map canvas { width: min(100%, calc((100vh - 190px) * 15.4 / 12.4)); height: auto; aspect-ratio: 15.4 / 12.4; border: 1px solid var(--line); }
+    #map .mlegend { font-size: 12px; color: var(--dim); letter-spacing: 0.05em; display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; }
+    #map .mlegend span { margin-right: 4px; }
+    #map .lg-you { color: #f6edd0; } #map .lg-goal { color: #e0b64a; } #map .lg-seen { color: #3b3227; } #map .lg-new { color: #231d16; text-shadow: 0 0 1px #7d7360; } #map .lg-stairs { color: #a89a78; } #map .lg-door { color: #8a6a3a; }
+    #map-away { display: none; font-size: 12px; color: var(--dim); font-style: italic; }
+    #map.elsewhere #map-away { display: block; }
+    #map .mfoot { font-size: 11px; color: var(--dim); letter-spacing: 0.12em; }
     h1 { font-weight: normal; letter-spacing: 0.28em; font-size: clamp(20px, 4vw, 38px); margin: 0 0 10px; }
     .tag { font-style: italic; color: var(--dim); margin: 0 0 36px; }
     button { font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); padding: 10px 26px; cursor: pointer; letter-spacing: 0.12em; }
@@ -167,6 +183,17 @@
   <div id="evidence-toast"></div>
   <div id="objective"></div>
   <div id="hint-keys">[J] JOURNAL</div>
+  <div id="map" class="overlay">
+    <div class="mapbox">
+      <div class="maphead"><span class="mtitle">THE HOUSE</span>
+        <span class="mtabs"><button data-floor="0">GROUND FLOOR</button><button data-floor="1">UPPER FLOOR</button></span>
+        <button id="map-close" class="mclose">CLOSE [M]</button></div>
+      <canvas id="map-canvas"></canvas>
+      <div class="mlegend"><span class="lg-you">▲</span> you, facing this way <span class="lg-goal">◎</span> your objective <span class="lg-seen">■</span> rooms you have been in <span class="lg-new">■</span> not yet explored <span class="lg-stairs">≡</span> stairs <span class="lg-door">|</span> doors</div>
+      <div id="map-away">You are somewhere else in the house.</div>
+      <div class="mfoot">[M] or [Esc] close · [1] ground floor · [2] upper floor</div>
+    </div>
+  </div>
   <div id="journal" class="overlay"></div>
   <div id="recorder" class="overlay"></div>
   <div id="choices"></div>
@@ -186,7 +213,7 @@
       <button id="btn-clear" style="display:none">CLEAR SAVE DATA</button>
     </div>
     <p id="menu-msg" class="hint" style="margin-top: 14px; min-height: 18px"></p>
-    <p class="hint">WASD move · Shift run · Mouse look · E interact · F flashlight · J journal<br />Esc pause · U step free if stuck · F3 performance overlay<br /><em>Headphones recommended.</em></p>
+    <p class="hint">WASD move · Shift run · Mouse look · E interact · F flashlight · J journal · M house map<br />Esc pause · U step free if stuck · F3 performance overlay<br /><em>Headphones recommended.</em></p>
   </div>
 
   <div id="pause" class="overlay">
@@ -198,6 +225,7 @@
       <button id="btn-save">SAVE GAME</button>
       <button id="btn-pause-settings">SETTINGS</button>
       <button id="btn-journal">OPEN JOURNAL</button>
+      <button id="btn-map">OPEN HOUSE MAP</button>
       <button id="btn-tomenu">RETURN TO MAIN MENU</button>
       <button id="btn-bench">RUN BENCHMARK WALK</button>
     </div>

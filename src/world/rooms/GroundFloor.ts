@@ -310,11 +310,12 @@ export class GroundFloor {
     furn.deskChair(b.frame([11.0, 0, 3.65], 0, [R]), m.armchair);
     const lamp = furn.tableLamp("desk-lamp", deskF.at([-0.5, 0.76, -0.15]), R, { on: true, interactive: true, flicker: 0.03, intensity: 1.3, range: 6.5 });
     void lamp;
-    b.box("blotter", [0.5, 0.008, 0.34], deskF.at([0.1, 0.764, 0.0]), m.coatGreen, { rooms: [R] });
+    b.box("blotter", [0.5, 0.008, 0.34], deskF.at([-0.2, 0.764, 0.0]), m.coatGreen, { rooms: [R] });
     furn.bookStack(deskF.at([0.55, 0.76, -0.2]), 4, 0.2, 51, R);
-    new TapeDeck(ctx, b.frame(deskF.at([0.46, 0.76, 0.17]), PI, [R]), "study", "deck", R);
+    // Dad's tape deck: on the right of the desk top (clear of the blotter, the lamp and the books), front toward the chair.
+    new TapeDeck(ctx, b.frame(deskF.at([0.4, 0.76, 0.15]), PI, [R]), "study", "deck", R);
     b.cyl("pen-cup", { h: 0.1, bottom: 0.07, sides: 10 }, deskF.at([-0.1, 0.81, -0.22]), m.dark, { rooms: [R] });
-    decor.noteOnSurface(deskF.at([0.1, 0.768, 0.02]), PI + 0.2, ["Property tax", "second notice", "", "Please remit by the 30th."], R, "Letter", { text: "A tax notice, creased where it was folded to fit an envelope. Entirely ordinary." });
+    decor.noteOnSurface(deskF.at([-0.2, 0.768, 0.02]), PI + 0.2, ["Property tax", "second notice", "", "Please remit by the 30th."], R, "Letter", { text: "A tax notice, creased where it was folded to fit an envelope. Entirely ordinary." });
     const deskDrawer = furn.frontDrawer(deskF, {
       id: "desk-drawer",
       x: 0.3,

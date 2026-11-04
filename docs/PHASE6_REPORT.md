@@ -122,3 +122,5 @@ Chase made grabbable (10-second arrow struggle, escape, per-grab clock), the tru
 Follow-up (verification and deployment): the True route was rerun on the final code and passed; chase fairness, pointer-release, save-during-grab and subtitle sizes were checked; the objective bar moved to the top-left so it never overlaps subtitles. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 14.
 
 Second follow-up: the family photograph (a second two-children frame beside it was being opened instead), collision audit tool and a stuck-recovery key, consistency fixes. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 16.
+
+Third follow-up: the study tape deck is now a clearly visible cassette deck with Chapter 5 objective steps, and a house map (M) was added. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 17.
