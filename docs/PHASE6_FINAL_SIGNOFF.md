@@ -82,4 +82,7 @@ Ready for sign-off **conditional on** the human checks above. Phase 7 not starte
 - Playing the deployed game with mouse and keyboard (same reason).
 
 ### GitHub
-See the final report in the conversation for the commit, workflow run and URL.
+- Before this pass `origin/main` was 73bdcd6 (already deployed once); local was one commit ahead (94ebbc2, unpushed) plus uncommitted work. Both were pushed as a fast-forward (no force): 94ebbc2 and 4340c28 ("Phase 6 complete ... browser deployment prep"). The 466 MB of local walkthrough videos are git-ignored and not on GitHub.
+- Repository: https://github.com/mailsitnc-ai/the-house-always-remembers (public, unchanged). Pages was already set to "GitHub Actions" as the source; no manual setting is needed.
+- Workflow "Deploy to GitHub Pages" (checkout, Node 22, `npm ci`, typecheck, build, upload `dist`, deploy): run 41802697138 succeeded in 48 s.
+- Published game: https://mailsitnc-ai.github.io/the-house-always-remembers/ . Opened in the embedded browser: the menu (NEW GAME, SETTINGS, CREDITS) appeared; 0 failed resource requests (JS chunks and `audio/dialogue/manifest.json` all 200); with `?demo&observer&ending&showcase` there is no Observer panel and no `__debug`; the checkpoint file is not served; a reload works; NEW GAME starts the prologue card. Not verified: actually playing with mouse and keyboard (pointer lock is refused in that browser), dialogue clip playback, and Continue.
