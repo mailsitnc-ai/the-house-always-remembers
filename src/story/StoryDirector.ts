@@ -327,9 +327,13 @@ export class StoryDirector {
 
   // ---- the last door ---------------------------------------------------------------------------
 
+  /** Set by the finale: the front door during the chase and the puzzle. */
+  frontDoorHook: (() => boolean) | null = null;
+
   /** Returns true if the front door was handled by the story. */
   onFrontDoor(): boolean {
     if (this.chapters.number < 8) return false;
+    if (this.frontDoorHook) return this.frontDoorHook();
     // The front door opens only once the house has finished with Daniel: after an ending.
     this.events.emit("toast", { text: "The door will not open. Not yet. She is still in the house.", ms: 4500 });
     return true;

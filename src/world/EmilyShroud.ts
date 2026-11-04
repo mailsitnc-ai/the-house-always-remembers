@@ -34,21 +34,24 @@ export function buildShroud(scene: Scene): { meshes: Mesh[]; handAt: Vector3 } {
   const PILLOW = 0.075;
   // Child proportions: a large head, narrow shoulders, a short neck, short limbs. About 1.25 m from crown to heel.
   const lumps: Lump[] = [
-    { z: 1.5, rx: 0.074, rz: 0.098, hc: 0.06 + PILLOW, hr: 0.1 }, // head
-    { z: 1.48, rx: 0.013, rz: 0.028, hc: 0.125 + PILLOW, hr: 0.019 }, // nose
-    { z: 1.52, rx: 0.044, rz: 0.011, hc: 0.118 + PILLOW, hr: 0.011 }, // brow
-    { z: 1.42, rx: 0.027, rz: 0.028, hc: 0.1 + PILLOW, hr: 0.018 }, // chin
-    { z: 1.36, rx: 0.03, rz: 0.05, hc: 0.035 + PILLOW * 0.55, hr: 0.048 }, // neck
-    { z: 1.27, rx: 0.13, rz: 0.075, hc: 0.02, hr: 0.088 }, // shoulders
-    { z: 1.12, rx: 0.1, rz: 0.13, hc: 0.018, hr: 0.098 }, // chest
-    { z: 0.95, rx: 0.088, rz: 0.115, hc: 0.012, hr: 0.082 }, // belly
-    { z: 0.82, rx: 0.098, rz: 0.1, hc: 0.012, hr: 0.085 }, // hips
-    { z: 0.64, rx: 0.09, rz: 0.165, hc: 0.01, hr: 0.078 }, // thighs
-    { z: 0.46, rx: 0.078, rz: 0.15, hc: 0.008, hr: 0.066 }, // shins
-    { z: 0.34, rx: 0.075, rz: 0.075, hc: 0.0, hr: 0.09 }, // feet
-    { z: 1.06, rx: 0.032, rz: 0.19, hc: 0.0, hr: 0.066, x: BX - 0.125 }, // left arm, at her side
-    { z: 1.06, rx: 0.032, rz: 0.19, hc: 0.0, hr: 0.066, x: BX + 0.125 }, // right arm
+    { z: 1.5, rx: 0.086, rz: 0.108, hc: 0.065 + PILLOW, hr: 0.128 }, // head
+    { z: 1.47, rx: 0.014, rz: 0.03, hc: 0.14 + PILLOW, hr: 0.024 }, // nose
+    { z: 1.52, rx: 0.047, rz: 0.012, hc: 0.128 + PILLOW, hr: 0.012 }, // brow
+    { z: 1.41, rx: 0.029, rz: 0.03, hc: 0.105 + PILLOW, hr: 0.02 }, // chin
+    { z: 1.35, rx: 0.03, rz: 0.05, hc: 0.02 + PILLOW * 0.4, hr: 0.04 }, // neck: the cloth dips between head and shoulders
+    { z: 1.25, rx: 0.14, rz: 0.075, hc: 0.03, hr: 0.125 }, // shoulders, narrow and a little raised
+    { z: 1.1, rx: 0.105, rz: 0.13, hc: 0.028, hr: 0.128 }, // ribs
+    { z: 0.95, rx: 0.082, rz: 0.11, hc: 0.02, hr: 0.085 }, // waist
+    { z: 0.81, rx: 0.1, rz: 0.1, hc: 0.02, hr: 0.1 }, // hips
+    { z: 0.64, rx: 0.088, rz: 0.15, hc: 0.014, hr: 0.082 }, // thighs
+    { z: 0.52, rx: 0.07, rz: 0.06, hc: 0.012, hr: 0.116 }, // knees, a little bent so they tent the cloth
+    { z: 0.42, rx: 0.06, rz: 0.1, hc: 0.008, hr: 0.064 }, // shins
+    { z: 0.31, rx: 0.04, rz: 0.055, hc: 0.0, hr: 0.14, x: BX - 0.05 }, // left foot, toes up under the sheet
+    { z: 0.31, rx: 0.04, rz: 0.055, hc: 0.0, hr: 0.14, x: BX + 0.05 }, // right foot
+    { z: 1.02, rx: 0.032, rz: 0.2, hc: 0.006, hr: 0.074, x: BX - 0.135 }, // left arm, at her side
+    { z: 1.02, rx: 0.032, rz: 0.2, hc: 0.006, hr: 0.074, x: BX + 0.135 }, // right arm
   ];
+
   const smax = (a: number, b: number, k: number): number => {
     const h = Math.max(k - Math.abs(a - b), 0) / k;
     return Math.max(a, b) + h * h * k * 0.25;
@@ -60,13 +63,13 @@ export function buildShroud(scene: Scene): { meshes: Mesh[]; handAt: Vector3 } {
       const dz = (z - l.z) / l.rz;
       const t = dx * dx + dz * dz;
       const v = t < 1 ? l.hc + l.hr * Math.sqrt(1 - t) : 0;
-      h = smax(h, v, 0.05);
+      h = smax(h, v, 0.035);
     }
     return h;
   };
   // Cloth is stiffer than the body under it: average the body height over a small neighbourhood.
   const tent = (x: number, z: number): number => {
-    const r = 0.02;
+    const r = 0.012;
     return (body(x, z) * 2 + body(x + r, z) + body(x - r, z) + body(x, z + r) + body(x, z - r)) / 6;
   };
   const X0 = BX - 0.58;
@@ -178,6 +181,50 @@ export function buildShroud(scene: Scene): { meshes: Mesh[]; handAt: Vector3 } {
   const bowMesh = Mesh.MergeMeshes(bow, true, true)!;
   bowMesh.material = ribbon;
   meshes.push(bowMesh);
+  // ---- her hair: fanned out on the pillow, with a few locks lying across the sheet, so the head, the hand and the ribbon are one girl ----
+  const hairM = material(scene, "m-shroud-hair", { diffuse: [1, 1, 1], spec: 0.06, power: 16, emissive: [0.045, 0.03, 0.022] });
+  const PTOP = MAT_TOP + PILLOW + 0.01;
+  for (let i = 0; i < 15; i++) {
+    const a = (i / 14 - 0.5) * 2;
+    const w = 0.5 + 0.5 * noise3(i * 3.1, 0.7, 2);
+    const path = spline(
+      [
+        [BX + a * 0.045, PTOP + 0.125 * (1 - Math.abs(a) * 0.35), 1.56],
+        [BX + a * 0.085, PTOP + 0.04 * (1 - Math.abs(a)), 1.63 + 0.02 * w],
+        [BX + a * 0.125 + 0.012 * Math.sin(i), PTOP + 0.004, 1.69 + 0.03 * w],
+        [BX + a * 0.16 + 0.018 * Math.sin(i * 1.7), PTOP + 0.001, 1.75 + 0.04 * w],
+      ],
+      9,
+    );
+    const strand = sweep(scene, "emily-hair", {
+      path,
+      // Flat, soft ribbons that thin toward the ends and lie on the pillow, not spikes standing off it.
+      rx: (t) => 0.016 * (1 - 0.55 * t),
+      ry: () => 0.0032,
+      segs: 6,
+      round: 0.04,
+      up: [0, 1, 0],
+      color: (_a, t) => shade([0.3, 0.2, 0.14], 0.8 + 0.35 * fbm(i * 2.3, t * 5, 1, 3)),
+    }).mesh;
+    strand.material = hairM;
+    meshes.push(strand);
+  }
+  // Two locks over the shoulder, lying on the cloth.
+  for (const [k, side] of [[0, -1], [1, 1]] as const) {
+    const x0 = BX + side * 0.085;
+    const path = spline(
+      [
+        [x0, MAT_TOP + 0.2, 1.52],
+        [x0 + side * 0.03, cloth(x0 + side * 0.03, 1.36) + 0.008, 1.36],
+        [x0 + side * 0.045 + 0.01 * k, cloth(x0 + side * 0.045, 1.2) + 0.006, 1.2],
+        [x0 + side * 0.05, cloth(x0 + side * 0.05, 1.05) + 0.005, 1.04 - 0.03 * k],
+      ],
+      10,
+    );
+    const lock = sweep(scene, "emily-lock", { path, rx: () => 0.013, ry: () => 0.006, segs: 8, round: 0.05, up: [0, 1, 0], color: (_a, t) => shade([0.3, 0.2, 0.14], 0.8 + 0.4 * fbm(k * 3, t * 8, 4, 3)) }).mesh;
+    lock.material = hairM;
+    meshes.push(lock);
+  }
   for (const m of meshes) m.isPickable = false;
   return { meshes, handAt: new Vector3(hx, hy + 0.02, hz) };
 }

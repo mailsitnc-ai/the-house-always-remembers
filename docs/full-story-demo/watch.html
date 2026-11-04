@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The House Always Remembers: the recorded True Ending run</title>
+<style>
+  body { margin: 0; background: #0b0b0d; color: #ddd; font: 14px/1.4 system-ui, sans-serif; display: flex; height: 100vh; }
+  #side { width: 300px; padding: 14px; overflow: auto; border-right: 1px solid #333; flex: none; }
+  #side h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+  #side p { color: #999; margin: 0 0 12px; font-size: 12px; }
+  button { display: block; width: 100%; text-align: left; background: #17171b; color: #ddd; border: 1px solid #333; padding: 7px 9px; margin: 0 0 5px; border-radius: 4px; cursor: pointer; font: inherit; }
+  button:hover, button.on { background: #26262e; border-color: #6a6a8a; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin: 14px 0 6px; }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  video { height: 100vh; max-width: 100%; background: #000; }
+</style>
+</head>
+<body>
+<div id="side">
+  <h1>True Ending run</h1>
+  <p>Run r20261103-170933, 8 segments, 28 min. It plays on, one chapter after another. The video is portrait (417 x 1036) because the browser pane it was recorded in was narrow.</p>
+  <h2>Chapters</h2>
+  <div id="parts"></div>
+  <h2>Chapter 8 moments</h2>
+  <div id="marks"></div>
+</div>
+<div id="stage"><video id="v" controls muted autoplay></video></div>
+<script>
+  const P = "video/r20261103-170933-part-";
+  const parts = [
+    ["1. The telephone", "01-ch1-the-telephone"], ["2. Homecoming", "02-ch2-homecoming"], ["3. The upstairs room", "03-ch3-the-upstairs-room"],
+    ["4. Family portraits", "04-ch4-family-portraits"], ["5. The Matron", "05-ch5-the-matron"], ["6. Eleven years ago", "06-ch6-eleven-years-ago"],
+    ["7. The missing night", "07-ch7-the-missing-night"], ["8. The last door", "08-ch8-the-last-door"],
+  ];
+  // Seconds into part 8 (from the run log: log time minus the 1401.3 s at which chapter 8 began).
+  const marks = [["The mirror sequence", 28], ["Emily's room, the preserved body", 77], ["The Matron's transformation", 112], ["The True Ending", 199], ["Credits and the telephone scene", 236]];
+  const v = document.getElementById("v");
+  let cur = 0;
+  const btns = [];
+  function play(i, t) {
+    cur = i;
+    v.src = P + parts[i][1] + ".webm";
+    v.onloadedmetadata = () => { if (t) v.currentTime = t; v.play().catch(() => {}); };
+    btns.forEach((b, k) => b.classList.toggle("on", k === i));
+  }
+  parts.forEach(([label], i) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => play(i);
+    document.getElementById("parts").appendChild(b);
+    btns.push(b);
+  });
+  marks.forEach(([label, t]) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => (cur === 7 ? ((v.currentTime = t), v.play()) : play(7, t));
+    document.getElementById("marks").appendChild(b);
+  });
+  v.onended = () => { if (cur < parts.length - 1) play(cur + 1); };
+  document.addEventListener("keydown", (e) => { if (e.key === "m") v.muted = !v.muted; });
+  play(0);
+</script>
+</body>
+</html>

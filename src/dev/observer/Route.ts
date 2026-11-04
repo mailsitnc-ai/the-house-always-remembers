@@ -5,7 +5,8 @@ import { STUDY_CODE } from "../../systems/PuzzleSystem";
 import type { RoomId } from "../../world/Layout";
 import { ROOM_BY_ID } from "../../world/Layout";
 
-export type RouteName = "true" | "recognition" | "denial";
+/** "caught-denial" and "caught-recognition" run the true route up to the chase and then stand still, to test the two ways of being caught. */
+export type RouteName = "true" | "recognition" | "denial" | "caught-denial" | "caught-recognition";
 
 /** Evidence that explains what the Matron has been doing. The true ending needs two of them. */
 const MOTIVE = ["house-statement", "parish-letter", "emily-room-note"];
@@ -15,6 +16,10 @@ const CHOICES: Record<RouteName, string[]> = {
   true: ["refuse", "own", "refuse"],
   recognition: ["refuse", "own", "accept"],
   denial: ["stay"],
+  // Evasive at the start, honest after: caught as a man who still wanted to be taken somewhere safe (Denial).
+  "caught-denial": ["unsure", "own", "refuse"],
+  // Honest all the way: caught as a man who knows his part (Recognition).
+  "caught-recognition": ["refuse", "own", "refuse"],
 };
 
 /**
@@ -24,7 +29,7 @@ const CHOICES: Record<RouteName, string[]> = {
  */
 export async function runRoute(bot: Bot, route: RouteName, c: ObserverContext): Promise<void> {
   const full = route !== "denial";
-  const wantMotive = route === "true";
+  const wantMotive = route === "true" || route.startsWith("caught");
   const ev = (id: string) => c.story.evidence.has(id);
 
   const step = async (label: string, fn: () => Promise<unknown>): Promise<void> => {
@@ -46,9 +51,30 @@ export async function runRoute(bot: Bot, route: RouteName, c: ObserverContext): 
   // ---- Stage A: the opening plays through in full -----------------------------------------------------
   await bot.until(() => !c.story.inPrologue && c.story.chapterNumber >= 2, 900, "opening");
   if (!c.flashlight.on) bot.tap("KeyF", "f");
-  await bot.sleep(2);
-  await bot.lookAround(4);
+  // A run resumed from a late checkpoint starts moving at once (the hunt has already begun).
+  if (ch() < 3) {
+    await bot.sleep(2);
+    await bot.lookAround(4);
+  }
 
+  // Focused test only (`&test=chase`, never part of a demonstration): begin at the chase itself, from the Chapter 8 checkpoint, instead of playing the confrontation first.
+  if (new URLSearchParams(location.search).get("test") === "chase") {
+    bot.annotate("Starts at the chase, from the Chapter 8 checkpoint: the confrontation's answers are set to those that lead here.");
+    // The answers he gave in the conversation, as the route's choices (the same flags the finale sets when a player chooses them).
+    const given = CHOICES[route];
+    const rounds = ["offer", "comfort", "plan"];
+    given.forEach((id, i) => c.state.set(`decision:${rounds[i]}:${id}`));
+    for (const k of ["seen:mirror", "seen:body", "finale:chamber", "finale:unmasked", "seen:true-form", "finale:chase"]) c.state.set(k);
+    c.horror.matron.skipTransformation();
+    c.horror.hunt = false;
+    c.horror.pursuitAt = -1;
+    (c.finale as unknown as { keepHorrorOff: boolean; beginChase(from: string): void }).keepHorrorOff = true;
+    (c.finale as unknown as { beginChase(from: string): void }).beginChase("emily");
+    if (route.startsWith("caught")) await bot.until(() => c.state.get("ending:done"), 240, "caught ending");
+    else await finalChase(bot, c, step);
+    await bot.until(() => c.state.get("ending:done"), 90, "credits");
+    return;
+  }
   if (ch() < 3) {
   // ---- Stage B and C: the living room and the family photograph ---------------------------------------
   await step("living room", () => room("living"));
@@ -208,6 +234,111 @@ export async function runRoute(bot: Bot, route: RouteName, c: ObserverContext): 
     await bot.sleep(0.5);
   }
   await bot.finaleChoices(CHOICES[route]);
+  if (c.state.get("finale:chase")) {
+    const caught = route.startsWith("caught");
+    // The failure routes let the second grab run out the ten seconds; every route breaks free of the first.
+    bot.failOnGrab = caught ? 2 : 0;
+    await evade(bot, c, 1);
+    if (caught) {
+      // He breaks free and runs again, then is held a second time and does not fight.
+      await evade(bot, c, 2);
+      await bot.until(() => c.state.get("ending:done"), 240, "caught ending");
+    } else {
+      await finalChase(bot, c, step);
+    }
+  }
   // The credits are on screen. The demonstration ends here.
-  await bot.until(() => c.state.get("ending:done"), 30);
+  await bot.until(() => c.state.get("ending:done"), 90, "credits");
+}
+
+/**
+ * Daniel runs for his life through the dark half of the house, away from wherever the Matron is, until she has caught him `n` times in all. This is what a player
+ * who cannot find the light does: every few seconds he heads for the dark point farthest from her. If a minute of it has not got her hands on him he stops to
+ * catch his breath (and she arrives). Nothing is faked: the grab is the game's own, and the escape is the bot pressing the arrows on screen.
+ */
+async function evade(bot: Bot, c: ObserverContext, n: number): Promise<void> {
+  const ending = () => c.state.get("ending:done") || c.state.get("ending:denial") || c.state.get("ending:recognition");
+  const points: { x: number; z: number }[] = (["hall", "rear", "dining", "kitchen"] as RoomId[]).map((r) => c.horror.nav.center(r));
+  bot.annotate(`RUN. Daniel sprints through the dark rooms, away from her${n > 1 ? ", again" : ""}.`);
+  bot.running = true;
+  const t0 = bot.clock;
+  while (c.finale.grabCount < n && !ending()) {
+    if (bot.clock - t0 > 60) {
+      bot.annotate("Daniel stops to catch his breath. She does not.");
+      bot.releaseAll();
+      await bot.until(() => c.finale.grabCount >= n || !!ending(), 30, "grabbed");
+      break;
+    }
+    const m = c.horror.matron.root.position;
+    const me = c.player.position;
+    const best = points
+      .filter((p) => Math.hypot(p.x - me.x, p.z - me.z) > 4)
+      .sort((a, b) => Math.hypot(b.x - m.x, b.z - m.z) - Math.hypot(a.x - m.x, a.z - m.z))[0];
+    if (!best) {
+      await bot.sleep(0.5);
+      continue;
+    }
+    await bot.walkTo(best, 0, "away from her", 0.9);
+  }
+  if (c.finale.grabCount >= n && !ending()) {
+    // Held: the bot's struggle reflex runs in `frame()`. Wait for the result: free, or the ending.
+    await bot.until(() => !c.finale.grabbed || !!ending(), 14, "struggle");
+    await bot.sleep(0.3);
+  }
+}
+
+/**
+ * The final chase and the front door, played the way a player would: run for the lit rooms, try the door, compare the two photographs (the one on the living-room wall
+ * and the original print in the study album), put the true one in the frame, and open the door.
+ */
+async function finalChase(bot: Bot, c: ObserverContext, step: (label: string, fn: () => Promise<unknown>) => Promise<void>): Promise<void> {
+  const ending = () => c.state.get("ending:done") || c.state.get("ending:denial") || c.state.get("ending:recognition");
+  bot.annotate("RUN. The Matron is behind him; he heads for the lit rooms.");
+  bot.running = true;
+  const foyer = c.horror.nav.center("foyer");
+  await step("run to the foyer", () => bot.walkTo(foyer, 0, "foyer", 0.6));
+  if (ending()) return;
+  bot.refugeOnly = true;
+  // Each step is retried until the game's own flag says it worked: a lamp failing in the middle of a walk (which sends Daniel to another lit room) must not end the run.
+  const until = async (label: string, flag: string, steps: () => Promise<unknown>): Promise<void> => {
+    for (let attempt = 0; attempt < 8 && !c.state.get(flag) && !ending(); attempt++) {
+      await step(`${label} (try ${attempt + 1})`, steps);
+      await bot.sleep(1);
+    }
+  };
+  const LIVING = { x: 3.4, z: 1.4 };
+  const FOYER = { x: 6.5, z: 1.4 };
+  await until("try the front door", "finale:door-tried", async () => {
+    await bot.walkTo(FOYER, 0, "foyer", 0.6);
+    await bot.use("door:front", { note: "Daniel tries the front door: \"Something is on the other side.\"" });
+  });
+  await bot.sleep(8);
+  // Through the lit rooms only: the living room is entered straight from the foyer, never by the dark hall.
+  await until("look at the photograph", "finale:photo-seen", async () => {
+    await bot.walkTo(LIVING, 0, "living room", 0.6);
+    await bot.use("read:living-photo", { note: "Daniel looks at the family photograph: the fifth figure stands at the door." });
+  });
+  await bot.sleep(3);
+  await until("take the original print", "finale:print", async () => {
+    await bot.walkTo(FOYER, 0, "foyer", 0.6);
+    await bot.walkTo({ x: 10.5, z: 1.8 }, 0, "study", 0.6);
+    await bot.use("read:album-print", { note: "Daniel takes the original print out of the album: four people, an empty step." });
+  });
+  await bot.sleep(3);
+  await until("replace the photograph", "finale:anchor", async () => {
+    await bot.walkTo(FOYER, 0, "foyer", 0.6);
+    await bot.walkTo(LIVING, 0, "living room", 0.6);
+    await bot.use("read:living-photo", { note: "Daniel puts the original print where the false one hangs." });
+  });
+  await bot.until(() => c.state.get("finale:anchor") || ending(), 20, "anchor broken");
+  bot.annotate("The connection breaks. Her cry; the lamps fail together; then silence.");
+  await bot.until(() => !!c.horror.matron && c.state.get("finale:anchor"), 5);
+  await bot.sleep(6);
+  bot.running = false;
+  bot.refugeOnly = false;
+  for (let attempt = 0; attempt < 5 && !c.state.get("ending:true"); attempt++) {
+    await step("walk to the front door", () => bot.walkTo(foyer, 0, "foyer", 0.6));
+    await step("open the front door", () => bot.use("door:front", { note: "Daniel opens the front door." }));
+    await bot.sleep(2);
+  }
 }

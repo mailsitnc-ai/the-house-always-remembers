@@ -271,7 +271,11 @@ export class HorrorDirector {
    */
   stageUpdate(dt: number): void {
     this.updateCorruption(dt);
-    if (this.matron.visible) this.matron.update(dt, this.pos);
+    if (this.matron.visible) {
+      this.matron.update(dt, this.pos);
+      // On the stairs she has to follow the ramp (the full director does this; the finale only runs this much of it).
+      if (this.matron.state === "walking" && this.matron.root.position.x < 30) this.matron.snapToFloor(this.floorFor(this.matron.root.position));
+    }
   }
 
   update(dt: number): void {

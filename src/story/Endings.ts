@@ -9,6 +9,9 @@ import type { GameState } from "../core/GameState";
  */
 export type EndingId = "denial" | "recognition" | "true";
 
+/** What a round of the confrontation can lead to: another round, an ending, or the chase that decides between the True Ending and the others. */
+export type Outcome = Round["id"] | EndingId | "chase";
+
 export interface Facts {
   /** The night has been put in order (the reconstruction puzzle). */
   reconstructed: boolean;
@@ -53,8 +56,8 @@ export interface Round {
   /** Recordings that play, in order, before the choices appear. */
   recording(f: Facts): string[];
   choices(f: Facts): Choice[];
-  /** Where each choice leads: another round or an ending. */
-  next(choice: string): Round["id"] | EndingId;
+  /** Where each choice leads: another round, an ending, or the final chase. */
+  next(choice: string): Outcome;
 }
 
 export const ROUNDS: Record<Round["id"], Round> = {
@@ -91,20 +94,31 @@ export const ROUNDS: Record<Round["id"], Round> = {
       if (f.understandsMatron) c.push({ id: "refuse", text: "No. But you don't get to decide what I do with it." });
       return c;
     },
-    next: (c) => (c === "refuse" ? "true" : "recognition"),
+    // Refusing her does not end anything: she stops pretending, and Daniel has to get out of the house. The chase decides the rest.
+    next: (c) => (c === "refuse" ? "chase" : "recognition"),
   },
 };
 
-/** Walks a list of choices through the rounds. Used by the finale and by tests. */
-export function resolve(choices: string[], f: Facts): EndingId | null {
-  let round: Round["id"] | EndingId = "offer";
+/** Walks a list of choices through the rounds. Used by the finale and by tests. Returns an ending, "chase", or null if the choices do not finish the conversation. */
+export function resolve(choices: string[], f: Facts): EndingId | "chase" | null {
+  let round: Outcome = "offer";
   for (const c of choices) {
-    if (round === "denial" || round === "recognition" || round === "true") break;
+    if (round === "denial" || round === "recognition" || round === "true" || round === "chase") break;
     const r: Round = ROUNDS[round];
     if (!r.choices(f).some((x) => x.id === c)) return null;
     round = r.next(c);
   }
-  return round === "denial" || round === "recognition" || round === "true" ? round : null;
+  return round === "denial" || round === "recognition" || round === "true" || round === "chase" ? round : null;
+}
+
+/**
+ * Where the Matron's catching Daniel leads. It follows what Daniel has said and what he knows, never chance. If he has answered her honestly
+ * all the way (he never said "I don't know what happened" or "Take me to her room", and he owned what he did) he is caught as a man who
+ * knows his part: Recognition. If he evaded her at any point he is caught as a man who still wants to be taken somewhere safe: Denial.
+ */
+export function caughtEnding(state: GameState): "denial" | "recognition" {
+  const evaded = state.get("decision:offer:stay") || state.get("decision:offer:unsure") || state.get("decision:comfort:afraid") || state.get("decision:comfort:stay");
+  return evaded || !state.get("decision:comfort:own") ? "denial" : "recognition";
 }
 
 /** Plain-language deductions for the journal, shown only once their conditions are met. */

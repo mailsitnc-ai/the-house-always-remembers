@@ -10,14 +10,51 @@ import { CHAPTERS } from "../../story/StoryData";
  * events and the game's own UI, keeps its save in its own storage namespace, and writes nothing to the player's save.
  */
 const ROUTES: { id: RouteName; label: string }[] = [
-  { id: "true", label: "True ending" },
-  { id: "recognition", label: "Recognition ending" },
-  { id: "denial", label: "Denial ending" },
+  { id: "true", label: "True ending (Chapter 8)" },
+  { id: "caught-denial", label: "Denial ending (Chapter 8)" },
+  { id: "caught-recognition", label: "Recognition ending (Chapter 8)" },
+  // The old whole-story routes, reachable only from a `?observer=` link and listed only while one of them is selected.
+  { id: "recognition", label: "Recognition ending (whole story)" },
+  { id: "denial", label: "Denial ending (whole story)" },
 ];
 
+/** The page address for a route. The three Chapter 8 routes are `?ending=` links (each loads the Chapter 8 checkpoint into its own save slot); other flags are kept. */
+function routeUrl(route: RouteName): string {
+  const q = new URLSearchParams(location.search);
+  for (const k of ["observer", "ending", "test", "resume"]) q.delete(k);
+  q.set("demo", "");
+  if (route === "true") q.set("ending", "true");
+  else if (route === "caught-denial") q.set("ending", "denial");
+  else if (route === "caught-recognition") q.set("ending", "recognition");
+  else q.set("observer", route);
+  return `?${q.toString().replace(/demo=(&|$)/, "demo$1")}`;
+}
+
+/** `?ending=true|denial|recognition`: the viewing links. Each loads the Chapter 8 checkpoint into its own save namespace and runs its own route. */
+function endingParam(): "true" | "denial" | "recognition" | null {
+  const e = new URLSearchParams(location.search).get("ending");
+  return e === "true" || e === "denial" || e === "recognition" ? e : null;
+}
+
+/** Copies the stored Chapter 8 checkpoint (docs/full-story-demo/chapter8-observer-checkpoint.json, served by the dev server) into this ending's own save slot. */
+function importCheckpoint(ending: string): void {
+  try {
+    const x = new XMLHttpRequest();
+    x.open("GET", "/docs/full-story-demo/chapter8-observer-checkpoint.json", false);
+    x.send();
+    const o = JSON.parse(x.responseText) as Record<string, string>;
+    localStorage.setItem(`thar.observer.${ending}.save`, o["thar.observer.save"]);
+    localStorage.setItem(`thar.observer.${ending}.meta`, o["thar.observer.meta"]);
+  } catch {
+    /* without the checkpoint the run simply starts from the beginning */
+  }
+}
+
 function paramRoute(): RouteName {
+  const ending = endingParam();
+  if (ending) return ending === "true" ? "true" : ending === "denial" ? "caught-denial" : "caught-recognition";
   const v = new URLSearchParams(location.search).get("observer");
-  return v === "recognition" || v === "denial" ? v : "true";
+  return v === "recognition" || v === "denial" || v === "caught-denial" || v === "caught-recognition" ? v : "true";
 }
 
 /** One line per chapter on why it matters. Only what the game itself establishes; no new facts. */
@@ -37,7 +74,7 @@ export class Observer {
   timeScale = 1;
   private readonly bot: Bot;
   private readonly route = paramRoute();
-  private readonly resume = new URLSearchParams(location.search).has("resume");
+  private readonly resume = new URLSearchParams(location.search).has("resume") || endingParam() !== null;
   private speed = 1;
   private paused = false;
   private started = false;
@@ -75,7 +112,9 @@ export class Observer {
     }
     // The observer's own save slot starts empty every time, so a run always begins from the same state.
     // `&resume` continues from the observer's own last checkpoint (made by earlier automated play) instead.
-    if (!this.resume) {
+    const ending = endingParam();
+    if (ending) importCheckpoint(ending);
+    else if (!this.resume) {
       c.save.clear();
       c.save.clearMeta();
     }
@@ -327,13 +366,22 @@ export class Observer {
       else if (key === "seen:mirror") this.annotate("Chapter 8: the mirror sequence has played.");
       else if (key === "seen:body") this.annotate("Chapter 8: Emily's room. Her body has been kept, not buried and gone: the Matron preserved it as a vessel.");
       else if (key === "seen:true-form") this.annotate("The Matron stops holding the human shape. She is the same entity, no longer constrained by a body. Watch the head, the hair and the neck.");
+      else if (key === "finale:unmasked") this.annotate("She stops pretending. Watch the transformation, then the objective changes to RUN.");
+      else if (key === "finale:door-tried") this.annotate("The front door again: \"Something is on the other side.\" The mystery from the first minute of the game.");
+      else if (key === "finale:print") this.annotate("The original print: four people, nobody behind them.");
+      else if (key === "finale:anchor") this.annotate("The connection is broken: the false photograph is replaced. The door is no longer held shut.");
       else if (key === "finale:chamber") this.annotate("The reconstructed room. The Matron cannot become Emily; she needs Daniel's guilt and attachment as the bridge to Emily's body.");
     });
-    e.on("recording:started", ({ id }) => this.annotate(`Playing recording: ${id}.`));
     e.on("scare", () => this.annotate("A sudden event."));
     e.on("ending:start", ({ id }) => this.annotate(`Ending: ${id}.`));
     e.on("credits:done", () => {
       this.recorder?.log("CREDITS AND POST-CREDIT TELEPHONE SCENE FINISHED");
+      // The True Ending has one more scene after the telephone: the Matron, BYE BYE, and the return to the menu. Record that too.
+      if (this.c.state.get("ending:true")) return;
+      window.setTimeout(() => void this.finishRecording(), 2500);
+    });
+    e.on("postcredits:done", () => {
+      this.recorder?.log("POST-CREDITS SCARE, BYE BYE AND RETURN TO THE MAIN MENU FINISHED");
       window.setTimeout(() => void this.finishRecording(), 2500);
     });
     e.on("credits:show", () => {
@@ -374,20 +422,20 @@ export class Observer {
       <b>OBSERVER MODE</b> · developer only<br/>
       <span id="obs-status"></span>
       <div id="obs-start"><button id="obs-go" style="margin-top:6px">▶ Play the ${ROUTES.find((r) => r.id === this.route)!.label} walkthrough</button>
-        <div style="margin-top:4px">Route: <select id="obs-route">${ROUTES.map((r) => `<option value="${r.id}" ${r.id === this.route ? "selected" : ""}>${r.label}</option>`).join("")}</select></div></div>
+        <div style="margin-top:4px">Route: <select id="obs-route">${ROUTES.filter((r) => r.id === this.route || ["true", "caught-denial", "caught-recognition"].includes(r.id)).map((r) => `<option value="${r.id}" ${r.id === this.route ? "selected" : ""}>${r.label}</option>`).join("")}</select></div></div>
       <div id="obs-controls" style="display:none">
         <button id="obs-pause">⏸ Pause</button><button id="obs-restart">↺ Restart</button><button id="obs-skip">Skip scene</button><button id="obs-next">Next chapter</button><br/>
         Speed: <button data-speed="0.5">0.5×</button><button data-speed="1" class="on">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button><br/>
         <button id="obs-ann" class="on">Annotations</button><button id="obs-sub" class="on">Subtitles</button><button id="obs-aud">Audio</button><br/>
-        Route: <select id="obs-route2">${ROUTES.map((r) => `<option value="${r.id}" ${r.id === this.route ? "selected" : ""}>${r.label}</option>`).join("")}</select>
+        Route: <select id="obs-route2">${ROUTES.filter((r) => r.id === this.route || ["true", "caught-denial", "caught-recognition"].includes(r.id)).map((r) => `<option value="${r.id}" ${r.id === this.route ? "selected" : ""}>${r.label}</option>`).join("")}</select>
         <button id="obs-exit">Exit</button>
       </div>`;
     document.body.appendChild(this.panel);
     this.status = this.panel.querySelector("#obs-status")!;
     const q = <T extends HTMLElement>(s: string): T => this.panel.querySelector<T>(s)!;
     q("#obs-go").addEventListener("click", () => this.start());
-    q("#obs-route").addEventListener("change", (ev) => (location.search = `?observer=${(ev.target as HTMLSelectElement).value}${this.audioOn ? "&audio" : ""}`));
-    q("#obs-route2").addEventListener("change", (ev) => (location.search = `?observer=${(ev.target as HTMLSelectElement).value}${this.audioOn ? "&audio" : ""}`));
+    q("#obs-route").addEventListener("change", (ev) => (location.search = routeUrl((ev.target as HTMLSelectElement).value as RouteName)));
+    q("#obs-route2").addEventListener("change", (ev) => (location.search = routeUrl((ev.target as HTMLSelectElement).value as RouteName)));
     q("#obs-pause").addEventListener("click", () => this.setPaused(!this.paused));
     q("#obs-restart").addEventListener("click", () => location.reload());
     q("#obs-skip").addEventListener("click", () => this.skipScene());

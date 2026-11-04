@@ -67,6 +67,8 @@ export class StoryUi {
     });
     events.on("memory:changed", () => this.refreshIfOpen());
     events.on("thought", ({ text }) => this.thought(text));
+    events.on("chase:danger", ({ level }) => (el("danger").style.opacity = String(level * 0.9)));
+    events.on("struggle", (st) => this.struggle(st));
     events.on("subtitle", ({ speaker, text }) => {
       if (!StoryUi.subtitlesEnabled) return;
       el("subtitle").innerHTML = `<b>${esc(speaker)}</b> ${esc(text)}`;
@@ -79,6 +81,7 @@ export class StoryUi {
       if (color) v.style.background = color;
       v.style.opacity = String(opacity);
     });
+    events.on("byebye", ({ on }) => el("byebye").classList.toggle("show", on));
     events.on("controls:lock", ({ locked }) => el("cutscene").classList.toggle("show", locked));
     events.on("cine:reveal", ({ on }) => el("cutscene").classList.toggle("show", !on));
     events.on("cine:dolly", ({ on }) => {
@@ -230,6 +233,35 @@ export class StoryUi {
     card.classList.add("show");
     window.clearTimeout(this.cardTimer);
     this.cardTimer = window.setTimeout(() => card.classList.remove("show"), n === 1 ? 4200 : 3800);
+  }
+
+  private struggleKeys = "";
+
+  /** The grab's escape prompt: the arrows to press, the time left in the grab, and the window for the current key. */
+  private struggle(st: { on: boolean; keys: string[]; done: number; left: number; total: number; window: number; msg: string; tone: "" | "ok" | "bad" }): void {
+    const box = el("struggle");
+    box.classList.toggle("show", st.on);
+    if (!st.on) {
+      this.struggleKeys = "";
+      return;
+    }
+    const sig = st.keys.join("");
+    const keys = el("s-keys");
+    if (sig !== this.struggleKeys) {
+      this.struggleKeys = sig;
+      keys.innerHTML = st.keys.map((k) => `<div class="s-key">${k}</div>`).join("");
+    }
+    keys.childNodes.forEach((n, i) => {
+      const c = (n as HTMLElement).classList;
+      c.toggle("ok", i < st.done);
+      c.toggle("cur", i === st.done);
+    });
+    el("s-time").style.transform = `scaleX(${Math.max(0, st.left / st.total)})`;
+    el("s-win").style.transform = `scaleX(${Math.max(0, Math.min(1, st.window))})`;
+    el("s-sec").textContent = String(Math.ceil(Math.max(0, st.left)));
+    const msg = el("s-msg");
+    msg.textContent = st.msg;
+    msg.className = `s-msg ${st.tone}`;
   }
 
   private objectiveTimer = 0;

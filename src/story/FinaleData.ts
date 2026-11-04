@@ -64,13 +64,30 @@ export const FINALE_RECORDINGS: RecordingDef[] = [
     { speaker: "The Matron", voice: "matron", text: "You have been clever. Yes. Your guilt, your love for her, every memory you could not put down: they are a road, and I have waited eleven years for you to walk it." },
     { speaker: "The Matron", voice: "matron", text: "Take her hand, Daniel. It will not hurt her. And it will not be Emily who gets up. I never wanted her back. I want what she left behind." },
   ] },
-  // ---- ending 1: denial ----
-  { id: "end1-room", title: "Emily's room, remembered", medium: "room", lines: [
-    { speaker: "The Matron", voice: "matron", text: "There. The way you remember it. Sit, and rest." },
-    { speaker: "Daniel", voice: "inner", text: "Em? ... Em?" },
+  // ---- the unmasking: Daniel refuses, and she stops pretending ----
+  { id: "fin-unmask", title: "The Matron", medium: "room", lines: [
+    { speaker: "The Matron", voice: "matron", text: "Then I will stop asking, Daniel." },
+    { speaker: "The Matron", voice: "matron", text: "I have held that door for eleven years. Run, if you like." },
   ] },
-  { id: "end1-phone", title: "The telephone", medium: "phone", lines: [
-    { speaker: "Emily", voice: "fake", text: "Daniel? Why did you leave me alone?" },
+  // ---- ending 1: denial (the Matron takes him, as he asks) ----
+  { id: "end1-offer", title: "The Matron", medium: "room", lines: [
+    { speaker: "The Matron", voice: "matron", text: "Good. Emily is upstairs, just as you left her. Your mother is waiting, and your father." },
+    { speaker: "Daniel", voice: "daniel", text: "Please... take me with my family." },
+  ] },
+  { id: "end1-catch", title: "The Matron", medium: "room", lines: [
+    { speaker: "The Matron", voice: "matron", text: "There. You are tired, and there is no one left to be brave for." },
+    { speaker: "The Matron", voice: "matron", text: "Your mother is waiting for you. Your father. Emily. I can take you to them." },
+    { speaker: "Daniel", voice: "daniel", text: "Please... take me with my family." },
+  ] },
+  { id: "end1-ritual", title: "The Matron", medium: "room", lines: [
+    { speaker: "The Matron", voice: "matron", text: "Rest now. It will not hurt for long." },
+    { speaker: "The Matron", voice: "matron", text: "A road can be walked only once, Daniel. You carried it a very long way." },
+    { speaker: "The Matron", voice: "matron", text: "Eleven years I have kept this small body for me. Now." },
+  ] },
+  { id: "end1-wake", title: "The Matron", medium: "room", lines: [
+    { speaker: "The Matron", voice: "matron", text: "There. Thank you, Daniel." },
+    { speaker: "The Matron", voice: "matron", text: "It was never going to be Emily who got up." },
+    { speaker: "The Matron", voice: "matron", text: "The door, now. It will open for me." },
   ] },
   // ---- ending 2: recognition ----
   { id: "end2-dawn", title: "Dawn", medium: "inner", lines: [
@@ -78,11 +95,9 @@ export const FINALE_RECORDINGS: RecordingDef[] = [
     { speaker: "Daniel", voice: "inner", text: "I don't understand everything that happened in that house. But I know this part is mine." },
   ] },
   // ---- ending 3: the true ending ----
-  { id: "end3-refuse", title: "The last door", medium: "room", lines: [
-    { speaker: "Daniel", voice: "daniel", text: "No. But you don't get to decide what I do with it." },
-  ] },
-  { id: "end3-matron", title: "The Matron", medium: "room", lines: [
-    { speaker: "The Matron", voice: "matron", text: "Daniel. Think what you are throwing away." },
+  { id: "end3-door", title: "The front door", medium: "inner", lines: [
+    { speaker: "Daniel", voice: "inner", text: "It was never on the other side." },
+    { speaker: "Daniel", voice: "inner", text: "She wrote herself into the picture, and I let her. All I had to do was take her out." },
   ] },
   { id: "end3-dawn", title: "Dawn", medium: "inner", lines: [
     { speaker: "Daniel", voice: "inner", text: "It was my choice, and my delay, and my fault. It wasn't the whole of me." },

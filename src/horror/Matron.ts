@@ -16,6 +16,8 @@ export class Matron extends Entity {
   private path: { x: number; z: number }[] = [];
   private speed = 1.0;
   private clock = 0;
+  /** The chase: she runs, leaning forward and turning fast, and the held stillness of her true form does not stop her. */
+  run = false;
   /** Head turn rate toward the player, radians per second. */
   headRate = 0.55;
   /** The Matron's corruption level, 0 (composed) to 3 (the true form). See Corruption.ts. */
@@ -155,7 +157,7 @@ export class Matron extends Entity {
     const rel = angleDiff(this.root.rotation.y, want);
     const headNow = this.fig.head.rotation.y;
     // Completely still: for a few seconds of the transformation the head does not follow Daniel at all.
-    if ((this.fig.rig?.stillness ?? 0) > 0.6) return;
+    if (!this.run && (this.fig.rig?.stillness ?? 0) > 0.6) return;
     const lim = 1.1;
     const goal = Math.max(-lim, Math.min(lim, rel));
     const step = this.corruption > 1.3 ? 0.3 : 0;
@@ -194,11 +196,18 @@ export class Matron extends Entity {
       this.root.position.z += (dz / dist) * step;
       // Body faces the direction of travel, slowly and smoothly.
       const want = Math.atan2(dx, dz);
-      this.root.rotation.y += Math.max(-1.2 * dt, Math.min(1.2 * dt, angleDiff(this.root.rotation.y, want)));
+      const rate = this.run ? 3.6 : 1.2;
+      this.root.rotation.y += Math.max(-rate * dt, Math.min(rate * dt, angleDiff(this.root.rotation.y, want)));
     }
-    // A very slight, even sway of the hem and no vertical bob: she glides.
-    this.fig.body.rotation.z = Math.sin(this.clock * 1.4) * 0.012;
-    this.fig.body.rotation.x = 0.02;
+    if (this.run) {
+      // Running: a long, forward lean and a heavy rocking from side to side, head cocked toward him.
+      this.fig.body.rotation.z = Math.sin(this.clock * 7.5) * 0.07;
+      this.fig.body.rotation.x = 0.17;
+    } else {
+      // A very slight, even sway of the hem and no vertical bob: she glides.
+      this.fig.body.rotation.z = Math.sin(this.clock * 1.4) * 0.012;
+      this.fig.body.rotation.x = 0.02;
+    }
     void player;
   }
 

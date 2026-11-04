@@ -81,7 +81,7 @@ const STEPS: Step[] = [
 ];
 
 export class ObjectiveSystem {
-  private override: string | null = null;
+  private override: { text: string; hint: string } | null = null;
   private lastKey = "";
   private chapter = 0;
 
@@ -99,8 +99,8 @@ export class ObjectiveSystem {
     events.on("flag:set", () => this.refresh());
     events.on("state:restored", () => this.refresh());
     // The finale (and any scripted scene) can set its own wording; it lasts until the next chapter or until cleared.
-    events.on("objective", ({ text }) => {
-      this.override = text || null;
+    events.on("objective", ({ text, hint }) => {
+      this.override = text ? { text, hint: hint ?? "" } : null;
       this.refresh(true);
     });
   }
@@ -111,7 +111,7 @@ export class ObjectiveSystem {
 
   /** The objective to show now. */
   current(): { id: string; text: string; hint: string } {
-    if (this.override) return { id: "scene", text: this.override, hint: "" };
+    if (this.override) return { id: "scene", text: this.override.text, hint: this.override.hint };
     const c = this.ctx;
     for (const s of STEPS) if (s.chapter === this.chapter && !s.done(c) && (s.available?.(c) ?? true)) return { id: s.id, text: s.text, hint: s.hint };
     const def = CHAPTERS[Math.max(0, this.chapter - 1)];

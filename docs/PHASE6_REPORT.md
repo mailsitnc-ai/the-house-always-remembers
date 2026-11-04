@@ -107,3 +107,16 @@ meaningful; real-Mac behaviour of the mirror and the stage is unverified.
 
 ## 20-21. Phase 7 and credits
 Phase 7 has not been started. No paid services or ElevenLabs credits were used.
+
+
+## 22. Final pass: Chapter 8 reworked (chase, front door, endings)
+Supersedes the ending descriptions above. Canon: `STORY_BIBLE.md` sections 6, 7.1, 7.3 and 9; behaviour: `docs/ENDINGS.md`.
+- The confrontation ends in a chase (objective RUN), a front-door puzzle (the false photograph and the original print), and three endings decided by what Daniel said and knew, or by reaching the door.
+- The Denial ending is now a death and a possession: Daniel gives himself up, a ritual spends him, Emily's preserved body rises with the Matron in it, and the front door opens for her.
+- Daniel's reflection and Emily's body were rebuilt; the Observer's "Playing recording: ..." annotation was removed (the normal game never showed identifiers).
+- Verified by observation: the chase to the True Ending through the Observer's `&test=chase` route, the post-credits sequence and menu return, the Denial aftermath stages as screenshots. Unverified: audio (all muted), a human-played chase, saves mid-chase. See the final report for the list.
+
+## 23. Final polish pass (see `docs/PHASE6_FINAL_SIGNOFF.md`)
+Chase made grabbable (10-second arrow struggle, escape, per-grab clock), the true-ending puzzle guided step by step, a global subtitle safe area clear of the cinematic bars, the reflection's final stage and Emily's body reworked, the Observer bot playing the real chase, and the production bundle checked for developer code. Details, tests and limits are in the sign-off file.
+
+Follow-up (verification and deployment): the True route was rerun on the final code and passed; chase fairness, pointer-release, save-during-grab and subtitle sizes were checked; the objective bar moved to the top-left so it never overlaps subtitles. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 14.

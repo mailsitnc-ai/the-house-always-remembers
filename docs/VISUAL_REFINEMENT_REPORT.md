@@ -80,7 +80,7 @@ reuses the Matron's sculpting code and adds one 768x384 texture and about 0.3 s 
 The new models were not replayed through the full game, the finale or Matron walking. Observer Mode was not run. The hand
 construction needs another dedicated pass.
 
-## 9. Screenshots (`/Users/shivam/Desktop/THE HOUSE THAT REMEMBERS/docs/entity-reference-v3/`)
+## 9. Screenshots (`docs/entity-reference-v3/`)
 `matron-face-front.png`, `matron-face-3q.png`, `matron-face-side.png`, `matron-full.png`, `matron-gameplay-hall.png`,
 `matron-gameplay-near.png`, `witness-full.png`, `witness-photograph.png`, `witness-gameplay-room.png`, `hollow-full.png`,
 `hollow-head.png`, `hollow-gameplay-living.png`, `unremembered-full.png`, `unremembered-closeup.png`,

@@ -30,6 +30,16 @@ export class InteractionSystem {
   private readonly tags = new Map<number, string>();
   private readonly tagged = new Map<string, AbstractMesh[]>();
 
+  private readonly overrides = new Map<string, Interactable>();
+
+  /**
+   * Lets a scene take over what an already-placed object does while the scene lasts. While `prompt()` returns text the override replaces the object's own
+   * behaviour; when it returns null the object behaves as it always did.
+   */
+  override(tag: string, handler: Interactable): void {
+    this.overrides.set(tag, handler);
+  }
+
   register(meshes: AbstractMesh | AbstractMesh[], target: Interactable, tag?: string): void {
     for (const m of Array.isArray(meshes) ? meshes : [meshes]) {
       this.targets.set(m.uniqueId, target);
@@ -73,7 +83,12 @@ export class InteractionSystem {
       const ray = this.player.camera.getForwardRay(REACH);
       const hit = this.scene.pickWithRay(ray, (m) => this.pickable(m));
       this.currentMesh = hit?.hit && hit.pickedMesh ? hit.pickedMesh : null;
-      if (hit?.hit && hit.pickedMesh) next = this.targets.get(hit.pickedMesh.uniqueId) ?? null;
+      if (hit?.hit && hit.pickedMesh) {
+        next = this.targets.get(hit.pickedMesh.uniqueId) ?? null;
+        const tag = this.tags.get(hit.pickedMesh.uniqueId);
+        const ov = tag ? this.overrides.get(tag) : undefined;
+        if (ov && ov.prompt() !== null) next = ov;
+      }
     }
     this.current = next;
     const text = next?.prompt() ?? null;

@@ -39,6 +39,11 @@ import { factsOf } from "../story/Endings";
  */
 const OBSERVER: boolean = import.meta.env.DEV && typeof location !== "undefined" && (new URLSearchParams(location.search).has("observer") || new URLSearchParams(location.search).has("demo"));
 /** Developer-only entity showcase: dev server and `?showcase` only, constant-folded away in production. */
+/** Each ending's viewing link keeps its own Observer save (`?ending=true|denial|recognition`), so one can never contaminate another or the normal game. */
+function observerNamespace(): string {
+  const e = new URLSearchParams(location.search).get("ending");
+  return e === "true" || e === "denial" || e === "recognition" ? `thar.observer.${e}` : "thar.observer";
+}
 const SHOWCASE: boolean = import.meta.env.DEV && typeof location !== "undefined" && new URLSearchParams(location.search).has("showcase");
 
 const WARM: [number, number, number] = [0.032, 0.022, 0.013];
@@ -155,7 +160,7 @@ export class Game {
     this.stage = new Stage(this.scene);
     // The Matron stands in the chamber for the confrontation: its lamp must be able to light her.
     this.stage.include(this.horror.matron.root);
-    this.save = new SaveSystem({ capture: () => this.captureSave(), apply: (d) => this.applySave(d) }, OBSERVER ? "thar.observer" : SHOWCASE ? "thar.showcase" : undefined);
+    this.save = new SaveSystem({ capture: () => this.captureSave(), apply: (d) => this.applySave(d) }, OBSERVER ? observerNamespace() : SHOWCASE ? "thar.showcase" : undefined);
     this.finale = new Finale({
       events: this.events,
       state: this.state,
@@ -167,6 +172,11 @@ export class Game {
       story: this.story,
       stage: this.stage,
       save: this.save,
+      scene: this.scene,
+      house: this.house,
+      interaction: this.interaction,
+      inventory: this.inventory,
+      input: this.input,
     });
     this.setupAutosave();
 
@@ -222,7 +232,20 @@ export class Game {
     this.events.on("controls:lock", ({ locked }) => (this.controlsLocked = locked));
     this.events.on("cine:dolly", ({ on }) => (this.dolly = on));
     this.events.on("credits:done", () => {
-      if (this.state.get("ending:done") && !this.observer) window.location.reload();
+      if (!this.state.get("ending:done")) return;
+      const menu = (): void => {
+        this.events.emit("postcredits:done", {});
+        if (!this.observer) window.location.reload();
+        else {
+          // The automated walkthrough cannot reload (that would start it over): it shows the main menu instead.
+          this.events.emit("byebye", { on: false });
+          this.events.emit("veil", { opacity: 0, ms: 0 });
+          this.setPhase("menu");
+        }
+      };
+      // After the True Ending's credits and telephone scene: a short final scare, then the main menu. The other endings go straight back.
+      if (this.finale.reached === "true") this.finale.postCredits(menu);
+      else menu();
     });
     this.events.on("journal:open", () => {
       if (this.phase === "playing") {
@@ -257,6 +280,8 @@ export class Game {
       // Dev-only: lets automated checks enter gameplay in environments that refuse pointer lock.
       (window as unknown as { __debug: unknown }).__debug = {
         play: () => this.setPhase("playing"),
+        /** For checking the ending sequences without replaying the story. */
+        endings: { events: this.events, state: this.state, finale: this.finale, phase: () => this.phase },
         teleport: (x: number, z: number, yaw = 0, pitch = 0, level = 0) => {
           this.player.setBase(level * 3);
           this.player.position.set(x, level * 3 + 1.65, z);
@@ -473,7 +498,7 @@ export class Game {
   }
 
   private manualSave(): boolean {
-    if (this.finale.busy || this.story.inPrologue) return false;
+    if (this.finale.busy || this.finale.grabbed || this.story.inPrologue) return false;
     const ok = this.save.write();
     if (ok) this.events.emit("save:done", { kind: "manual" });
     return ok;
@@ -484,7 +509,7 @@ export class Game {
     const request = (): void => {
       window.clearTimeout(this.saveTimer);
       this.saveTimer = window.setTimeout(() => {
-        if (this.finale.busy || this.story.inPrologue || this.state.get("ending:done") || !this.story.chapters.started) return;
+        if (this.finale.busy || this.finale.grabbed || this.story.inPrologue || this.state.get("ending:done") || !this.story.chapters.started) return;
         if (this.save.write()) this.events.emit("save:done", { kind: "auto" });
       }, 1500);
     };

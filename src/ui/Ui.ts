@@ -113,7 +113,7 @@ export class Ui {
     el("btn-credits").addEventListener("click", () => handlers.onCredits());
     for (const id of ["btn-settings", "btn-pause-settings"]) el(id).addEventListener("click", () => el("settings").classList.add("show"));
     el("btn-settings-back").addEventListener("click", () => el("settings").classList.remove("show"));
-    el("btn-save").addEventListener("click", () => msg("save-msg", handlers.onSave() ? "Game saved." : "Could not save here (storage is unavailable)."));
+    el("btn-save").addEventListener("click", () => msg("save-msg", handlers.onSave() ? "Game saved." : "Could not save right now (storage is unavailable, or a scene is in progress)."));
     const bMenu = el("btn-tomenu");
     bMenu.addEventListener("click", () => {
       if (confirmed("menu", bMenu, "RETURN TO MAIN MENU", "PROGRESS IS SAVED. CLICK AGAIN")) handlers.onToMenu();

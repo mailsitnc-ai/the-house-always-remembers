@@ -66,13 +66,13 @@ Names, from the original brief:
 
 What is established: the best ending requires Daniel to **understand what happened, accept responsibility, and understand the Matron's manipulation**. Accountability must never read as endless self-punishment. Endings are implemented in Phase 6.
 
-The repository does not record any more detail about what happens in each ending. The meanings below are therefore a **proposal**, written to fit the new direction, for the owner to confirm:
+The owner has now confirmed the meanings below (Phase 6 final pass). Chapter 8 ends in a chase: after the confrontation Daniel refuses her, she stops pretending (the 21-second transformation), the objective becomes RUN, and the house is the arena. Being caught resolves to Denial or Recognition by what Daniel said and knew, never by chance; reaching the front door and solving the anchor puzzle is the True Ending. See `docs/ENDINGS.md`:
 
 | Ending | Daniel's state | What happens to the Matron's plan |
 |---|---|---|
-| Denial / The Escape | Leaves without facing the truth; the false version stands | The anchor is intact. He escapes the house but not the connection; the plan is deferred, not defeated. |
-| Recognition / The Confession | Faces what he did and accepts responsibility, but does not understand the Matron's manipulation | He is honest about the past but is still her anchor without knowing it; the plan is left unresolved. |
-| **True / The House Always Remembers** | Understands the truth, accepts responsibility **without self-punishment**, and understands the Matron's manipulation | **The plan fails** (section 8). |
+| Denial / The Escape | Daniel yields to her promise of his family (by choosing comfort, or by being caught in the chase after evading her) | **The plan succeeds.** He gives himself willingly as the bridge; the ritual spends him (he dies). The Matron leaves her entity form for Emily's preserved body and walks out of the front door that never opened for Daniel. |
+| Recognition / The Confession | Faces what he did and accepts responsibility, but does not understand the Matron's manipulation (accepts her offer to carry it, or is caught after answering honestly all the way) | He is honest about the past but is still her anchor without knowing it; the plan is left unresolved. Dawn; one upstairs window lit. |
+| **True / The House Always Remembers** | Understands the truth, accepts responsibility without self-punishment, survives the chase and breaks what ties her to the house | **The plan fails.** He takes her out of the family photograph (the original print replaces the false one), the front door is no longer held shut, and he walks out. |
 
 ---
 
@@ -87,7 +87,7 @@ The Matron is an ancient entity attracted to **emotional anchor points**: places
 - **The Matron subsequently found Emily's body and has preserved it ever since.** It is the physical vessel she intends to possess. Nothing in the game, journal, timeline or endings may say or imply that Emily was cremated or that her body was destroyed.
 - **Daniel is the bridge; Emily's preserved body is the vessel.** The Matron does not want to resurrect Emily, and she does not become Emily in identity. She can imitate Emily's voice and mannerisms, imperfectly, and she remains the Matron.
 - It is a central part of the mystery and is **foreshadowed**, not announced: through clues, environmental storytelling, unusual preservation-related details and increasingly disturbing discoveries. **It must not be revealed too early, and never in one long speech.**
-- The eventual discovery must be emotionally powerful and disturbing, **not gratuitously graphic**.
+- The eventual discovery (Emily's preserved body in her room) must be emotionally powerful and disturbing, **not gratuitously graphic**: Emily is clearly deceased, still, and unharmed. **Owner direction (Phase 6 final pass):** the Denial ending is the one place the game is graphic, and only about Daniel: his body after the ritual is shown with severe injuries and blood. Emily's body is never shown injured.
 - It fits the established rules: the death and the burial are historical events she cannot rewrite; she took what was left afterwards. **The place where the body is kept must not suggest where the accident happened**, and the story must not explain how Emily died.
 
 ### 7.2 Daniel's role
@@ -99,7 +99,7 @@ The Matron is an ancient entity attracted to **emotional anchor points**: places
 1. A vessel alone is empty. The Matron cannot simply wear it: she needs a living **bridge** between the dead girl and herself.
 2. The bridge is **Daniel's emotional connection to Emily**: his guilt, his memories, his attachment. These make a route that the Matron can travel along.
 3. The bridge only holds while Daniel is **held in the denial-and-guilt cycle** (her established aim). Denial keeps the anchor unresolved; guilt keeps it strong. That is why she has kept him there for eleven years, and why she needs him to **come back** and walk through the house's memories while she steers them.
-4. The completed bridge would let her possess Emily's preserved body. The body is the vessel and Daniel is only the bridge; nothing happens to Daniel's own body. The one inside would be the Matron, **never Emily returning**. This keeps the established rule that she cannot become Emily on her own: she can only do it through the vessel and the anchor.
+4. The completed bridge would let her possess Emily's preserved body. The body is the vessel and Daniel is only the bridge. **Updated canon (Denial ending only):** a bridge can be crossed once. If Daniel gives himself up willingly, the ritual spends him and he dies; his death is the price of her crossing. If he does not, nothing happens to his body. The one inside would be the Matron, **never Emily returning**. This keeps the established rule that she cannot become Emily on her own: she can only do it through the vessel and the anchor.
 5. **Why the existing rules still hold.** She uses only established powers: reconstructing rooms, imitating voices, steering memories, influencing the house. She still cannot rewrite history (the death stands; she only preserves what remains) and still cannot make Daniel believe what the evidence contradicts. No new power is introduced.
 
 ### 7.4 The final revelation: what the player gradually discovers
@@ -151,14 +151,14 @@ Required: the true ending must show this, and must not read as Daniel punishing 
 - **Combines:** cinematic presentation; environmental manipulation (reconstructing rooms and doors, which is already established); a frightening physical presence; a clear objective for the player; **player-controlled escape, evasion or survival**; dialogue that reveals her intentions.
 - **Not a combat game.** Fits the established design: she cannot enter lamplight, truth weakens her, and she moves at one steady, deliberate pace. The danger is that she can corner Daniel and begin the bridge; being caught advances the bridge rather than killing him.
 - *Proposal for the objective:* reach Emily and break the anchor, using lamplight as refuges and verified evidence to stagger her, while the house reshapes around Daniel. Her speech reveals the plan in her own calm, exact voice (see `VOICE_DIRECTION.md`); she is not theatrical.
-- Should be skippable-safe and fair, in line with the game's non-lethal tradition.
+- Should be skippable-safe and fair, in line with the game's non-lethal tradition. **Updated (Phase 6 final pass):** the confrontation is followed by a real first-person chase (the objective changes to RUN). She runs him down through the house; lit rooms are still refuges (she cannot cross lamplight); lamps fail with a warning and come back; she is a little slower than a running player. If she catches him, the Denial or Recognition ending follows by his decisions. The way out is the front door, which has been blocked since the first minute of the game ("Something is on the other side."): the fifth figure in the family photograph stands at that door, and the house holds it shut from inside. Replacing the false photograph with the original print (found in the study album) breaks the connection and the door opens: the True Ending.
 
 ### C. Daniel's reflection
 - **When.** A major mirror sequence (late chapter 6 or 7, proposal). The existing bathroom mirror cabinet is a natural place.
 - Daniel looks into a mirror and sees **a monstrous version of himself**: recognisably Daniel, distorted into something frightening. It represents his guilt, his self-perception and the Matron's manipulation of his memories.
 - It **behaves unnaturally and may move independently of Daniel.**
 - **Distinct visual identity.** It must not read as a generic monster or as one of the existing entities (the Hollow's smoke, the Witness's amber grain, the Unremembered's strips, the Matron's green dress). *Proposal:* it is Daniel's own figure in his own clothes and face, stretched, with the wrongness located in behaviour and timing (it lags, then leads, then holds still while he moves) and in a cold, desaturated look with a dark, wet-looking edge, so it feels like a corrupted copy of him. Its hands and face should echo how Daniel actually holds himself.
-- Must have a clear story meaning: his guilt *as the Matron has been shaping it*, which is distorted past what really happened.
+- Must have a clear story meaning: his guilt *as the Matron has been shaping it*, which is distorted past what really happened. **As built:** it is Daniel himself (face, hair, build, maroon knit, jeans) and begins as an exact reflection, then lags, then has its own timing, keeps looking at him when he looks away, goes slack-mouthed, stretches, comes to the glass and raises its hands.
 - Performance note for the Mac Neo: avoid a full real-time planar reflection of the whole house; a single mirror with a cheap, controlled render is enough.
 
 ---
@@ -187,3 +187,6 @@ Required: the true ending must show this, and must not read as Daniel punishing 
 3. Confirm or change the proposed ending meanings (section 6).
 4. Confirm the placement of the three set-pieces (chapters 6, 7 and 8).
 5. Confirm whether the tall fifth figure in the living-room photo is meant to be the Matron (a natural reading, not yet decided).
+
+
+**Chase update (final polish pass).** In the Chapter 8 chase the Matron can now take hold of Daniel; he has ten seconds to break her grip (a short sequence of arrows). Breaking free resumes the chase; being held for the full ten seconds ends it and the evidence-based ending (Denial or Recognition, see `docs/ENDINGS.md`) follows. Ending canon is unchanged.

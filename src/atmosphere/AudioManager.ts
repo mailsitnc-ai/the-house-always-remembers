@@ -305,6 +305,157 @@ export class AudioManager {
     }
   }
 
+  /** True when the player asked for reduced scare intensity or softer sudden audio. */
+  get softSudden(): boolean {
+    return this.intensity < 1;
+  }
+
+  /**
+   * PLACEHOLDER Matron vocal for the post-credits sting (no recorded vocal exists for it, and none is generated here): a synthesised low growl that
+   * rises into a short shriek, built from oscillators and noise through vocal-like filters. The voice part goes through the dialogue volume,
+   * the impact through the effects volume, both under the master volume, and everything is scaled down by reduced scare intensity / sudden audio.
+   * Returns a function that cuts it off (for the skip key).
+   */
+  matronSting(): () => void {
+    return this.vocal(1.4, 70, 1, 1);
+  }
+
+  /** The Matron calling out during the chase: a low, level voice that breaks upward, shorter and quieter than the final sting. */
+  matronCry(kind: "call" | "shriek" = "call"): () => void {
+    return kind === "shriek" ? this.vocal(0.9, 82, 1, 0.8) : this.vocal(1.1, 62, 0.25, 0.7);
+  }
+
+  /** A door thrown shut somewhere in the house. `near` is 0 (far) to 1 (in the room). */
+  slam(near = 1): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const g = this.intensity * (0.35 + 0.65 * near);
+    const t = ctx.currentTime;
+    const hit = ctx.createGain();
+    hit.gain.value = g;
+    hit.connect(this.sfx);
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(95, t);
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.35);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(1, t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(og).connect(hit);
+    o.start(t);
+    o.stop(t + 0.55);
+    this.burst(0.28, 900, 0.55 * g, "bandpass");
+    this.burst(0.5, 140, 0.9 * g);
+  }
+
+  /** One heavy footfall of the Matron. `near` is 0 (far away) to 1 (close behind). */
+  chaseStep(near: number): void {
+    const g = this.intensity * (0.25 + 0.75 * near);
+    this.burst(0.16, 75, 0.9 * g);
+    this.burst(0.07, 1200, 0.15 * g, "bandpass");
+  }
+
+  /** A lamp failing: a short electrical buzz and a drop. */
+  lampBuzz(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.18 * this.intensity, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    g.connect(this.sfx);
+    for (const f of [100, 150, 2300]) {
+      const o = ctx.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.value = f;
+      o.connect(g);
+      o.start(t);
+      o.stop(t + 0.75);
+    }
+  }
+
+  /** The voice of the Matron: oscillators and noise through vocal-like filters, to the dialogue bus. Returns a function that cuts it off. */
+  private vocal(dur: number, base: number, shriekAmount: number, level: number): () => void {
+    const ctx = this.ctx;
+    if (!ctx) return () => undefined;
+    const t = ctx.currentTime;
+    const out = ctx.createGain();
+    out.gain.value = this.intensity * level;
+    out.connect(this.dialogueBus);
+    const nodes: AudioScheduledSourceNode[] = [];
+    const formant = (f: number, q: number, gain: number): BiquadFilterNode => {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = f;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.value = gain;
+      bp.connect(g).connect(out);
+      return bp;
+    };
+    const f1 = formant(650, 6, 0.55);
+    const f2 = formant(1150, 8, 0.4);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(1, t + 0.03);
+    env.gain.setValueAtTime(1, t + dur * 0.5);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    env.connect(f1);
+    env.connect(f2);
+    const growl = ctx.createOscillator();
+    growl.type = "sawtooth";
+    growl.frequency.setValueAtTime(base, t);
+    growl.frequency.linearRampToValueAtTime(base * 1.35, t + dur * 0.45);
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 31;
+    const vibGain = ctx.createGain();
+    vibGain.gain.value = 9;
+    vib.connect(vibGain).connect(growl.frequency);
+    growl.connect(env);
+    const sources: OscillatorNode[] = [growl, vib];
+    if (shriekAmount > 0) {
+      const shriek = ctx.createOscillator();
+      shriek.type = "sawtooth";
+      shriek.frequency.setValueAtTime(380, t + dur * 0.18);
+      shriek.frequency.exponentialRampToValueAtTime(1350, t + dur * 0.65);
+      const shriekGain = ctx.createGain();
+      shriekGain.gain.setValueAtTime(0, t);
+      shriekGain.gain.linearRampToValueAtTime(0.35 * shriekAmount, t + dur * 0.3);
+      shriekGain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      shriek.connect(shriekGain).connect(env);
+      sources.push(shriek);
+    }
+    for (const o of sources) {
+      o.start(t);
+      o.stop(t + dur + 0.1);
+      nodes.push(o);
+    }
+    const hit = ctx.createGain();
+    hit.gain.value = this.intensity * level;
+    hit.connect(this.sfx);
+    const impact = ctx.createOscillator();
+    impact.frequency.setValueAtTime(52, t);
+    const ig = ctx.createGain();
+    ig.gain.setValueAtTime(0.9, t);
+    ig.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+    impact.connect(ig).connect(hit);
+    impact.start(t);
+    impact.stop(t + 1.3);
+    nodes.push(impact);
+    return () => {
+      out.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+      hit.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+      for (const n of nodes) {
+        try {
+          n.stop(ctx.currentTime + 0.1);
+        } catch {
+          /* already stopped */
+        }
+      }
+    };
+  }
+
   diagnostics(): AudioDiagnostics {
     const ctx = this.ctx;
     let rms = 0;

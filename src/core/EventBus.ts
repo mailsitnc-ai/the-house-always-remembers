@@ -27,7 +27,11 @@ export interface GameEvents {
   "card": { title: string; text: string; ms: number } | { title: null };
   "credits:show": { ending: string };
   "credits:done": Record<string, never>;
-  "objective": { text: string };
+  "objective": { text: string; hint?: string };
+  /** The Matron's proximity during the chase (0 = far or Daniel is in the light, 1 = at his shoulder). */
+  "chase:danger": { level: number };
+  /** The grab struggle. `on` false hides it. `keys` are arrow glyphs; `done` is how many are cleared. */
+  "struggle": { on: boolean; keys: string[]; done: number; left: number; total: number; window: number; msg: string; tone: "" | "ok" | "bad" };
   "scare": { id: string; visual: boolean };
   "thought": { text: string };
   "subtitle": { speaker: string; text: string };
@@ -42,6 +46,8 @@ export interface GameEvents {
   "cine:letterbox": { on: boolean };
   "cine:dolly": { on: boolean };
   "veil": { opacity: number; ms: number; color?: string };
+  "byebye": { on: boolean };
+  "postcredits:done": Record<string, never>;
 }
 
 type Handler<T> = (payload: T) => void;

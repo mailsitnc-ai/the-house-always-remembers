@@ -41,6 +41,7 @@ export class Stage {
   }
   private lampBase = 0.6;
   figure: ReflectionFigure | null = null;
+  private figLight: PointLight | null = null;
   /** The spot the player stands on in each configuration. */
   readonly spawn = new Vector3(STAGE_ORIGIN.x, 1.65, STAGE_ORIGIN.z - 1.25);
   /** Where the hand lies in the chamber, for the camera to find. */
@@ -191,6 +192,13 @@ export class Stage {
     for (const r of this.lit) this.lamp.includedOnlyMeshes = [...this.lamp.includedOnlyMeshes, ...r.getChildMeshes()];
     this.figure = buildReflection(this.scene);
     this.figure.root.position.set(STAGE_ORIGIN.x, 0, STAGE_ORIGIN.z - 1.0);
+    // The reflection faces the glass, so it needs a light on its front: a cold vanity light above the mirror that lights only the reflection.
+    this.figLight = new PointLight("stage-figure-light", new Vector3(STAGE_ORIGIN.x + 0.05, 1.6, STAGE_ORIGIN.z + 1.6), this.scene);
+    this.figLight.diffuse = new Color3(0.8, 0.9, 1);
+    this.figLight.specular = new Color3(0.3, 0.35, 0.4);
+    this.figLight.range = 4;
+    this.figLight.intensity = 0;
+    this.figLight.includedOnlyMeshes = [...this.figure.meshes];
     this.lamp.includedOnlyMeshes = [...this.lamp.includedOnlyMeshes, ...this.figure.meshes];
     this.mirror.renderList = [...s, ...m, ...this.figure.meshes];
     for (const x of this.mirror.renderList) x.alwaysSelectAsActiveMesh = true;
@@ -217,6 +225,12 @@ export class Stage {
     }
     if (this.mirror) this.mirror.refreshRate = config === "mirror" ? 1 : 0;
     this.figure?.root.setEnabled(config === "mirror");
+    if (this.figLight) this.figLight.intensity = config === "mirror" ? 3.4 : 0;
+  }
+
+  /** The vanity light on the reflection, as a fraction of its full level: eased down as the figure nears the glass and the light, so a close face is not blown out. */
+  setFigureLight(f: number): void {
+    if (this.figLight && this.figure?.root.isEnabled()) this.figLight.intensity = 3.4 * f;
   }
 
   setLamp(f: number): void {
@@ -229,6 +243,7 @@ export class Stage {
     if (this.lamp) this.lamp.intensity = 0;
     if (this.mirror) this.mirror.refreshRate = 0;
     this.figure?.root.setEnabled(false);
+    if (this.figLight) this.figLight.intensity = 0;
   }
 
   get node(): TransformNode | null {

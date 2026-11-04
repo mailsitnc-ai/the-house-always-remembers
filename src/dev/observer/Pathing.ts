@@ -54,7 +54,11 @@ export class Grid {
     return i < 0 || j < 0 || i >= W || j >= H ? -1 : j * W + i;
   }
 
+  /** When set, cells it returns true for are treated as blocked (the chase: stay in the lit rooms). */
+  forbidden: ((level: 0 | 1, x: number, z: number) => boolean) | null = null;
+
   free(level: 0 | 1, x: number, z: number): boolean {
+    if (this.forbidden?.(level, x, z)) return false;
     const k = this.idx(x, z);
     return k >= 0 && !this.blocked[level][k];
   }
@@ -77,7 +81,12 @@ export class Grid {
     const s = this.nearestFree(level, from.x, from.z);
     const g = this.nearestFree(level, to.x, to.z);
     if (!s || !g) return null;
-    const grid = this.blocked[level];
+    let grid = this.blocked[level];
+    if (this.forbidden) {
+      // Cells the caller forbids count as blocked for this search.
+      grid = new Uint8Array(grid);
+      for (let k = 0; k < grid.length; k++) if (!grid[k] && this.forbidden(level, X0 + ((k % W) + 0.5) * CELL, Z0 + (Math.floor(k / W) + 0.5) * CELL)) grid[k] = 1;
+    }
     const start = this.idx(s.x, s.z);
     const goal = this.idx(g.x, g.z);
     const gx = goal % W;

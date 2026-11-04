@@ -90,7 +90,7 @@ Captured by the dev-only showcase (`?showcase`), which places the **game's own m
 uses) in an isolated studio, or uses the **real chapter-8 chamber** and the **real house and player camera**. Not part of any
 production build.
 
-Folder: `/Users/shivam/Desktop/THE HOUSE THAT REMEMBERS/docs/entity-reference-v2/`
+Folder: `docs/entity-reference-v2/`
 - `matron-full.png`
 - `matron-face.png`
 - `matron-silhouette.png` (a three-quarter side view against a pale wall)

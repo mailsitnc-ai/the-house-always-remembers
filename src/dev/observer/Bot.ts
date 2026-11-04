@@ -19,7 +19,7 @@ import type { AudioManager } from "../../atmosphere/AudioManager";
 import type { InventorySystem } from "../../systems/InventorySystem";
 import type { SaveSystem } from "../../platform/SaveSystem";
 import { Grid, type P2 } from "./Pathing";
-import { ROOM_BY_ID, STAIRS, roomAt } from "../../world/Layout";
+import { type RoomId, ROOM_BY_ID, STAIRS, roomAt } from "../../world/Layout";
 
 /** Everything the observer is given by the Game (never imported from game code directly, so the game stays unaware of it). */
 export interface ObserverContext {
@@ -81,9 +81,75 @@ export class Bot {
     for (const r of w) r();
   }
 
-  frame(): Promise<number> {
+  private rawFrame(): Promise<number> {
     if (this.aborted) return Promise.reject(new BotAbort());
     return new Promise((res, rej) => this.waiting.push(() => (this.aborted ? rej(new BotAbort()) : res(this.dt))));
+  }
+
+  private fleeing = false;
+
+  /** Grab number at which Daniel stops trying to break free (0: always breaks free). A test of the 10-second failure. */
+  failOnGrab = 0;
+  private reactT = 0;
+  private lastDone = -1;
+  /** Grabs he has escaped, and failures he allowed, for the report. */
+  escapes = 0;
+  private grabNoted = -1;
+
+  /**
+   * Held by the Matron: the bot answers the on-screen arrows with the real arrow keys, about half a second after each one appears (a person's reaction),
+   * through the game's own input, exactly as a player would. With `failOnGrab` set to this grab's number it does nothing, and the 10 seconds run out.
+   */
+  private struggle(dt: number): void {
+    this.releaseAll();
+    const st = this.c.finale.struggle;
+    if (!st) return;
+    const no = this.c.finale.grabCount;
+    if (this.grabNoted !== no) {
+      this.grabNoted = no;
+      this.lastDone = -1;
+      this.reactT = 0.5;
+      this.annotate(this.failOnGrab === no ? `Grabbed (${no}). Daniel does not fight; the ten seconds run out.` : `Grabbed (${no}). Daniel fights her grip: arrows in order.`);
+    }
+    if (this.failOnGrab === no) return;
+    if (st.done !== this.lastDone) {
+      this.lastDone = st.done;
+      this.reactT = 0.45 + Math.random() * 0.25;
+    }
+    this.reactT -= dt;
+    if (this.reactT > 0 || st.done >= st.keys.length) return;
+    const code = { "←": "ArrowLeft", "↑": "ArrowUp", "→": "ArrowRight", "↓": "ArrowDown" }[st.keys[st.done]] ?? "ArrowUp";
+    this.tap(code, code);
+    this.reactT = 0.45;
+    if (st.done === st.keys.length - 1) this.escapes++;
+  }
+
+  /**
+   * Every wait in the walkthrough passes through here, so a lamp failing in the chase is answered wherever Daniel is and whatever he is doing: he runs for a lit
+   * room (the way a player does on hearing the buzz) and the action he was in the middle of carries on afterwards.
+   */
+  async frame(): Promise<number> {
+    const dt = await this.rawFrame();
+    if (this.c.finale.grabbed) this.struggle(dt);
+    if (!this.fleeing && this.c.finale.chasing) {
+      const dark = this.c.finale.darkRefuge as RoomId | null;
+      const pos = this.c.player.position;
+      if (dark && this.level() === 0 && roomAt(pos.x, pos.z, 0) === dark) {
+        this.fleeing = true;
+        this.hold("KeyW", false);
+        const was = this.running;
+        this.running = true;
+        const out = (this.c.finale.litRefuges as RoomId[]).filter((r) => r !== dark).map((r) => this.c.horror.nav.center(r)).sort((a, b) => Math.hypot(a.x - pos.x, a.z - pos.z) - Math.hypot(b.x - pos.x, b.z - pos.z))[0];
+        this.annotate("The lamp is failing. Daniel runs for a lit room.");
+        try {
+          await this.follow(this.grid.path(0, { x: pos.x, z: pos.z }, out) ?? [out], 0, 0.8);
+        } finally {
+          this.running = was;
+          this.fleeing = false;
+        }
+      }
+    }
+    return dt;
   }
 
   /** Waits `sec` seconds of game time; cut short by the skip control. */
@@ -124,7 +190,7 @@ export class Bot {
   }
 
   busy(): boolean {
-    return this.c.finale.busy || this.c.story.inPrologue || this.c.horror.guiding || this.c.phase() === "paused";
+    return this.c.finale.busy || this.c.finale.grabbed || this.c.story.inPrologue || this.c.horror.guiding || this.c.phase() === "paused";
   }
 
   // ---- keys ------------------------------------------------------------------------------------
@@ -133,11 +199,20 @@ export class Bot {
     window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code, key: key ?? code, bubbles: true }));
   }
 
+  /** Holds Shift with every walk (the chase). */
+  running = false;
+
+  /** In the chase, once Daniel is in the lit rooms, paths keep to them: the dark rooms are where she is. */
+  set refugeOnly(on: boolean) {
+    this.grid.forbidden = on ? (level, x, z) => level === 0 && !["foyer", "living", "study", "hall"].includes(roomAt(x, z, 0) ?? "") : null;
+  }
+
   hold(code: string, on: boolean): void {
     if (on === this.held.has(code)) return;
     if (on) this.held.add(code);
     else this.held.delete(code);
     this.key(code, on);
+    if (code === "KeyW") this.hold("ShiftLeft", on && this.running);
   }
 
   releaseAll(): void {
@@ -252,6 +327,12 @@ export class Bot {
       }
       await this.maybeWatch();
       const pos = this.c.player.position;
+      // The chase: do not walk into a refuge whose lamp is failing or out until it is lit again.
+      const darkNow = this.c.finale.darkRefuge as RoomId | null;
+      if (darkNow && level === 0 && roomAt(path[i].x, path[i].z, 0) === darkNow && roomAt(pos.x, pos.z, 0) !== darkNow) {
+        this.hold("KeyW", false);
+        continue;
+      }
       const wp = path[i];
       const dx = wp.x - pos.x;
       const dz = wp.z - pos.z;
@@ -268,6 +349,8 @@ export class Bot {
       err = Math.atan2(Math.sin(err), Math.cos(err));
       this.turn(yaw, 0.04, dt);
       this.hold("KeyW", Math.abs(err) < 0.6);
+      // Running, but easing off on the last metre and a half so a run does not carry him past the stairs or a door.
+      this.hold("ShiftLeft", this.running && this.held.has("KeyW") && !(last && dist < 1.6));
       if (await this.doorAhead(aim)) continue;
       // Stuck detection: no real progress for a while.
       if (this.clock - lastCheck > 1.2) {
@@ -350,6 +433,10 @@ export class Bot {
     const goalZ = up ? STAIRS.z1 + 0.9 : STAIRS.z0 - 0.7;
     const yaw = up ? 0 : Math.PI;
     const end = this.clock + 25;
+    // On the stairs he walks (a run would carry him off the side), and only moves once he is facing the way down.
+    const wasRunning = this.running;
+    this.running = false;
+    this.hold("ShiftLeft", false);
     while (this.clock < end) {
       const dt = await this.frame();
       if (this.busy()) {
@@ -364,9 +451,12 @@ export class Bot {
       const toWest = pos.x > STAIR_X + 0.25;
       this.hold(up ? "KeyD" : "KeyA", toEast);
       this.hold(up ? "KeyA" : "KeyD", toWest);
-      this.hold("KeyW", true);
+      let aligned = yaw - this.yaw;
+      aligned = Math.atan2(Math.sin(aligned), Math.cos(aligned));
+      this.hold("KeyW", Math.abs(aligned) < 0.45);
       if ((up && pos.z > goalZ && this.level() === 1) || (!up && pos.z < goalZ && this.level() === 0)) break;
     }
+    this.running = wasRunning;
     this.hold("KeyW", false);
     this.hold("KeyA", false);
     this.hold("KeyD", false);
@@ -375,6 +465,8 @@ export class Bot {
   // ---- watching things that appear -------------------------------------------------------------
 
   private async maybeWatch(): Promise<void> {
+    // In the chase Daniel runs; he does not stop to look at her.
+    if (this.running) return;
     const h = this.c.horror;
     const pursuing = h.active?.id === "matron-pursuit";
     for (const [name, e] of [["witness", h.witness], ["matron", h.matron], ["hollow", h.hollow]] as const) {

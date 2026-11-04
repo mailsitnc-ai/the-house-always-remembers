@@ -128,6 +128,13 @@ export class Door implements Interactable {
     if (this.cfg.collide ?? true) this.leaf.checkCollisions = Math.abs(this.angle) < 0.35;
   }
 
+  /** Opens the door whatever its lock (the finale: the front door finally opens). */
+  forceOpen(): void {
+    this.locked = false;
+    this.target = this.sign * (this.cfg.maxAngle ?? OPEN_ANGLE);
+    this.ctx.audio.creak();
+  }
+
   prompt(): string | null {
     if (this.cfg.fixed) return "Front door";
     const noun = this.cfg.label ?? "door";

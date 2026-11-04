@@ -12,11 +12,12 @@ import { factsOf } from "../story/Endings";
  *  2  the uneasy woman      two of Daniel's false memories are doubted, or the tape that spoke in Emily's voice is exposed
  *  3  the unmasking         Emily's burial is on the table (the funeral card), the motive clues begin (the house kept, the
  *                           plot, Emily's room), the mirror has shown Daniel what he is, or four memories have fallen
- *  4  the true form         the confrontation in Emily's room, when Daniel sees the body and answers her
+ *  4  the true form         the confrontation in Emily's room, once Daniel has refused her and she stops pretending
  */
 export function corruptionStage(evidence: EvidenceSystem, state: GameState): 1 | 2 | 3 | 4 {
   const f = factsOf(evidence, state);
-  if (state.get("finale:chamber") || f.bodySeen) return 4;
+  // The true form is shown only when she stops pretending: when Daniel refuses her in Emily's room (see Finale.ts), not before.
+  if (state.get("finale:unmasked")) return 4;
   if (evidence.has("funeral-card") || f.motiveClues >= 1 || f.mirrorSeen || f.memoriesDoubted >= 4) return 3;
   if (f.memoriesDoubted >= 2 || f.tapeExposed) return 2;
   return 1;
