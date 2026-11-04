@@ -86,3 +86,30 @@ Ready for sign-off **conditional on** the human checks above. Phase 7 not starte
 - Repository: https://github.com/mailsitnc-ai/the-house-always-remembers (public, unchanged). Pages was already set to "GitHub Actions" as the source; no manual setting is needed.
 - Workflow "Deploy to GitHub Pages" (checkout, Node 22, `npm ci`, typecheck, build, upload `dist`, deploy): run 41802697138 succeeded in 48 s.
 - Published game: https://mailsitnc-ai.github.io/the-house-always-remembers/ . Opened in the embedded browser: the menu (NEW GAME, SETTINGS, CREDITS) appeared; 0 failed resource requests (JS chunks and `audio/dialogue/manifest.json` all 200); with `?demo&observer&ending&showcase` there is no Observer panel and no `__debug`; the checkpoint file is not served; a reload works; NEW GAME starts the prologue card. Not verified: actually playing with mouse and keyboard (pointer lock is refused in that browser), dialogue clip playback, and Continue.
+
+## 15. Objective HUD fix (after the owner's own playtest)
+
+### Root cause (found by reproducing it in a fresh New Game, not by reading the source)
+The objective logic was working: the text was emitted and the element was filled. It was effectively invisible because:
+1. **Layout collision.** The previous pass moved `#objective` to the top-left under the top bar, exactly where the performance readout (`#hud`, top-left) sits, and that readout was **on by default** (`showPerf: true` in `Settings.ts`), so every fresh game started with a 6-line debug overlay over the objective.
+2. **Too faint.** 13 px dim text at 60% opacity with no background, over busy wallpaper; the hint line was hidden entirely after nine seconds.
+3. **Why my earlier tests missed it.** The Observer shows its own "Objective:" line in its panel, and my subtitle measurements used an injected objective, so the real HUD was never looked at in a normal game.
+Chapter 1 (the prologue) has no objective by design; the first objective appears when Chapter 2 begins.
+
+### The fix (`index.html`, `src/ui/StoryUi.ts`, `src/platform/Settings.ts`)
+- `#objective`: top-left, z-index 11 (above the cinematic bars and subtitles), on a dark plate with a gold left border, an "OBJECTIVE" label, a 14-18 px main line and a 12-14 px hint that is **always shown**; the 9-second highlight is now a glow only. Hidden when empty.
+- The performance readout moved to the bottom-left and is **off by default** (F3 or Settings still toggle it).
+- The objective is cleared when the credits start; credits and BYE BYE now sit above it (z-index 13/14).
+- No story, ending or objective-text change: all six True Ending objectives, WALK OUT, WATCH and LISTEN are emitted by the same code as before.
+
+### Observed in the browser (dev server, fresh origin, volume 0; the pointer-lock step used the dev `play()` hook because the embedded browser refuses pointer lock; keys were real browser key events)
+- New Game via the real menu button, Enter to skip the prologue: "OBJECTIVE / Go into the living room." with its hint appeared and was still there 14 s later, readable, above the scene.
+- Teleported (dev helper) into the living room: it changed to "Examine the family photograph." and the prompt "[E] Examine photograph" showed without overlap.
+- Pressed E (real key): the photograph opened and the objective changed at once to "Read Mum's note in the kitchen." with its hint; it stayed visible during the inspection view, beside the "Evidence added" notice with no overlap.
+- Letterbox on with a subtitle (events injected): the objective sits on the top bar, the subtitle above the bottom bar, no overlap (measured rectangles and a screenshot).
+- `credits:show` (injected): the objective text cleared.
+### Production build
+Built and served with `vite preview`: the menu showed NEW GAME, SETTINGS, CREDITS with `?demo&observer&ending=true`; the computed style of `#objective` had z-index 11, a 3 px border and 16 px text; the performance readout was hidden; no `__debug`, no Observer elements, 0 failed requests. The production bundle has no Observer or checkpoint strings.
+### Not verified
+- Chapters 3-8 objectives in a normal game were **not** played this pass; the Chapter 8 and True Ending objective texts were observed earlier (previous passes) in the DOM through Observer runs, and the new styling was not re-checked on those exact texts. The longest hints wrap within the 520 px plate by CSS but were not screenshotted.
+- Playing the production or deployed game past the title card (pointer lock), by me. The owner has played it in Chrome.

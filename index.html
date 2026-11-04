@@ -45,9 +45,9 @@
     #end-card.show { opacity: 1; }
     #end-card-title { font-size: clamp(20px, 3.6vw, 34px); letter-spacing: 0.24em; margin-bottom: 18px; }
     #end-card-text { max-width: 560px; font-style: italic; color: var(--dim); line-height: 1.7; }
-    #byebye { position: fixed; inset: 0; z-index: 12; background: #000; display: none; align-items: center; justify-content: center; color: var(--ink); letter-spacing: 0.4em; font-size: 30px; }
+    #byebye { position: fixed; inset: 0; z-index: 14; background: #000; display: none; align-items: center; justify-content: center; color: var(--ink); letter-spacing: 0.4em; font-size: 30px; }
     #byebye.show { display: flex; }
-    #credits { position: fixed; inset: 0; z-index: 11; background: #000; display: none; overflow: hidden; text-align: center; }
+    #credits { position: fixed; inset: 0; z-index: 13; background: #000; display: none; overflow: hidden; text-align: center; }
     #credits.show { display: block; }
     #credits-roll { position: absolute; left: 0; right: 0; top: 100%; animation: roll 40s linear forwards; }
     #credits-roll h2 { font-weight: normal; letter-spacing: 0.3em; font-size: 26px; margin: 0 0 80px; }
@@ -87,12 +87,14 @@
     #evidence-toast { position: fixed; left: 16px; bottom: calc(var(--safe-bottom) + 40px); z-index: 10; font-size: 14px; letter-spacing: 0.04em; padding: 8px 12px; background: rgba(8, 6, 4, 0.8); border-left: 2px solid #b9a66e; opacity: 0; transform: translateX(-12px); transition: opacity 0.4s, transform 0.4s; pointer-events: none; }
     #evidence-toast.show { opacity: 1; transform: none; }
     #evidence-toast span { display: block; font-size: 11px; color: var(--dim); margin-top: 3px; letter-spacing: 0.15em; text-transform: uppercase; }
-    #objective { position: fixed; left: 16px; top: calc(var(--bar-h) + 10px); z-index: 10; max-width: min(46vw, 560px); font-size: 13px; line-height: 1.5; color: var(--dim); opacity: 0.6; transition: opacity 1.2s; pointer-events: none; text-shadow: 0 1px 6px #000; }
-    #objective .o-main { display: block; letter-spacing: 0.06em; }
-    #objective .o-hint { display: block; font-size: 11px; opacity: 0; max-height: 0; transition: opacity 1.2s; }
-    #objective.bright .o-hint { opacity: 0.8; max-height: 6em; }
-    #objective.bright { opacity: 0.95; }
-    #hint-keys { position: fixed; right: 16px; top: 38px; font-size: 11px; letter-spacing: 0.15em; color: var(--dim); opacity: 0.5; pointer-events: none; display: none; }
+    /* The objective: always shown (never dimmed or collapsed), top-left, above the cinematic bars, on its own dark plate so it reads over any scene. */
+    #objective { position: fixed; left: 16px; top: 14px; z-index: 11; box-sizing: border-box; max-width: min(44vw, 520px); padding: 8px 14px 9px 12px; background: rgba(8, 6, 4, 0.78); border-left: 3px solid #b9a66e; color: #f1e6c8; pointer-events: none; text-shadow: 0 1px 4px #000; transition: box-shadow 0.8s, border-color 0.8s; }
+    #objective:empty { display: none; }
+    #objective .o-label { display: block; font-size: 10px; letter-spacing: 0.3em; color: #b9a66e; margin-bottom: 3px; }
+    #objective .o-main { display: block; letter-spacing: 0.05em; font-size: clamp(14px, 0.5vw + 11px, 18px); line-height: 1.35; }
+    #objective .o-hint { display: block; margin-top: 4px; font-size: clamp(12px, 0.3vw + 10px, 14px); line-height: 1.45; color: #d6cba8; }
+    #objective.bright { border-left-color: #fff3c8; box-shadow: 0 0 18px rgba(255, 236, 170, 0.35); }
+    @media (max-width: 600px) { #objective { max-width: calc(100vw - 32px); } }
     .jbox { background: rgba(10, 8, 6, 0.96); border: 1px solid var(--line); width: min(980px, 94vw); max-height: 88vh; display: flex; flex-direction: column; text-align: left; }
     .jbox.small { width: min(520px, 92vw); }
     .jhead { display: flex; justify-content: space-between; align-items: flex-end; padding: 16px 20px 6px; }
@@ -131,7 +133,7 @@
     .tape { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(217,207,180,0.12); } .tape i { display: block; font-size: 11px; color: var(--dim); font-style: normal; }
     #story-end { z-index: 9; }
     @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
-    #hud { position: fixed; left: 10px; top: 8px; font: 11px/1.5 ui-monospace, Menlo, monospace; color: rgba(217, 207, 180, 0.7); background: rgba(0, 0, 0, 0.45); padding: 6px 8px; white-space: pre; pointer-events: none; }
+    #hud { position: fixed; left: 10px; bottom: calc(var(--bar-h) + 8px); z-index: 2; font: 11px/1.5 ui-monospace, Menlo, monospace; color: rgba(217, 207, 180, 0.7); background: rgba(0, 0, 0, 0.45); padding: 6px 8px; white-space: pre; pointer-events: none; }
     #inspect { background: transparent; justify-content: flex-end; padding-bottom: 8vh; pointer-events: none; }
     #inspect .box { background: var(--panel); border: 1px solid var(--line); padding: 14px 22px; max-width: 460px; }
     #inspect h2 { font-weight: normal; margin: 0 0 6px; letter-spacing: 0.15em; font-size: 16px; }

@@ -107,7 +107,11 @@ export class StoryUi {
     events.on("choices:show", ({ choices }) => this.showChoices(choices));
     events.on("choices:hide", () => el("choices").classList.remove("show"));
     events.on("card", (c) => this.showCard(c));
-    events.on("credits:show", ({ ending }) => this.showCredits(ending));
+    events.on("credits:show", ({ ending }) => {
+      // The ending is over: the objective goes with it, and stays gone.
+      this.setObjective("", "", false);
+      this.showCredits(ending);
+    });
     window.addEventListener("keydown", (e) => {
       if (!el("choices").classList.contains("show")) return;
       const i = Number(e.key) - 1;
@@ -269,7 +273,7 @@ export class StoryUi {
   /** One quiet line at the bottom of the screen. It brightens when it changes, then fades back. */
   private setObjective(text: string, hint: string, bright = true): void {
     const o = el("objective");
-    o.innerHTML = `<span class="o-main">${esc(text)}</span>${hint ? `<span class="o-hint">${esc(hint)}</span>` : ""}`;
+    o.innerHTML = text ? `<span class="o-label">OBJECTIVE</span><span class="o-main">${esc(text)}</span>${hint ? `<span class="o-hint">${esc(hint)}</span>` : ""}` : "";
     if (!bright) return;
     o.classList.add("bright");
     window.clearTimeout(this.objectiveTimer);

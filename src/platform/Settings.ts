@@ -12,7 +12,7 @@ export interface SettingsData {
 }
 
 const KEY = "thar.settings.v1";
-const DEFAULTS: SettingsData = { renderScale: 0.75, volume: 0.8, dialogueVolume: 1, effectsVolume: 1, reducedIntensity: false, reducedAudio: false, subtitles: true, musicVolume: 1, showPerf: true };
+const DEFAULTS: SettingsData = { renderScale: 0.75, volume: 0.8, dialogueVolume: 1, effectsVolume: 1, reducedIntensity: false, reducedAudio: false, subtitles: true, musicVolume: 1, showPerf: false };
 
 /** Persisted user settings. Storage can be blocked (private windows), so every access is guarded. */
 export class Settings {
