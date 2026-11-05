@@ -23,7 +23,7 @@ import type { Input } from "../core/Input";
 import { Aftermath, CORPSE_AT } from "../world/Aftermath";
 import { photograph } from "../world/PaperTextures";
 import type { SaveSystem } from "../platform/SaveSystem";
-import { ROUNDS, caughtEnding, factsOf, type EndingId, type Round } from "./Endings";
+import { ROUNDS, THRESHOLDS, caughtEnding, factsOf, type EndingId, type Round } from "./Endings";
 
 /** Things a scene script can wait for. */
 type Wait =
@@ -232,7 +232,17 @@ export class Finale {
 
   private showChoices(): void {
     const round = ROUNDS[this.currentRound];
-    this.choices = round.choices(factsOf(this.d.story.evidence, this.d.state));
+    const facts = factsOf(this.d.story.evidence, this.d.state);
+    this.choices = round.choices(facts);
+    // For the final question, say in the browser console exactly what Daniel does and does not know (nothing is shown in the game): when the "True" line is absent this names the missing requirement.
+    if (this.currentRound === "plan") {
+      const missing: string[] = [];
+      if (!facts.tapeExposed) missing.push("the tape has not been exposed (voice analysis not solved)");
+      if (!facts.mirrorSeen) missing.push("the bathroom mirror scene has not completed");
+      if (!facts.bodySeen) missing.push("Emily's room scene has not been seen");
+      if (facts.motiveClues < THRESHOLDS.motiveClues) missing.push(`only ${facts.motiveClues} of the 3 clues about the Matron's purpose found (house statement, parish letter, Mum's note in Emily's room; two are needed)`);
+      console.info("[ending] final question", { ...facts, trueOptionOffered: this.choices.some((c) => c.id === "refuse"), missing });
+    }
     this.d.events.emit("choices:show", { choices: this.choices });
   }
 
