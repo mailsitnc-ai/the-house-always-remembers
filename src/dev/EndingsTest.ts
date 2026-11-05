@@ -1,7 +1,7 @@
 import { EventBus } from "../core/EventBus";
 import { GameState } from "../core/GameState";
 import { EvidenceSystem } from "../story/EvidenceSystem";
-import { ROUNDS, caughtEnding, factsOf, resolve } from "../story/Endings";
+import { ROUNDS, caughtEnding, factsOf, planReport, resolve } from "../story/Endings";
 
 /**
  * Developer-only tests of the confrontation's branching, run against the real ending logic with the real evidence and state classes
@@ -96,5 +96,28 @@ export function runEndingTests(): { rows: TestRow[]; passed: number; failed: num
     t("a fresh attempt starts with no decisions", false, b.state.get("decision:comfort:stay"));
   }
   const passed = rows.filter((r) => r.pass).length;
+  // The optional clues: each one is recognised on its own, any two are enough, one is not, and they survive a save and a load.
+  {
+    const ids = (w: ReturnType<typeof world>) => ROUNDS.plan.choices(w.facts()).map((c) => c.id);
+    for (const [a, b] of [[MOTIVE[0], MOTIVE[1]], [MOTIVE[0], MOTIVE[2]], [MOTIVE[1], MOTIVE[2]]]) {
+      t(`Q3 offers True with exactly ${a} + ${b}`, ["accept", "refuse"], ids(world({ evidence: [...REQUIRED, a, b] })));
+    }
+    t("Q3 does not offer True with no clues", ["accept"], ids(world({ evidence: REQUIRED })));
+    t("Q3 offers True with all three clues", ["accept", "refuse"], ids(world({ evidence: [...REQUIRED, ...MOTIVE] })));
+    // The clue count is the number of registered evidence ids: examining nothing, or a different document, adds nothing.
+    t("Q3 does not count other documents as clues", ["accept"], ids(world({ evidence: [...REQUIRED, "anna-unsent"] })));
+    for (const one of MOTIVE) t(`Q3 does not offer True with only ${one}`, ["accept"], ids(world({ evidence: [...REQUIRED, one] })));
+    const w = world({ evidence: [...REQUIRED, MOTIVE[1], MOTIVE[2]] });
+    const snap = w.ev.snapshot();
+    const w2 = world({ evidence: [] });
+    w2.ev.restore(JSON.parse(JSON.stringify(snap)));
+    t("clues are recognised after a save and a load", ["accept", "refuse"], ids(w2));
+    const rep = planReport(w.ev, w.state);
+    t("planReport: clues recognised", [false, true, true], MOTIVE.map((id) => rep.clues[id]));
+    t("planReport: True offered, no reason excluded", [true, []], [rep.trueOptionOffered, rep.reasonsExcluded]);
+    const rep1 = planReport(world({ evidence: [...REQUIRED, MOTIVE[0]] }).ev, world({ evidence: [] }).state);
+    t("planReport names the exclusion (clues)", true, rep1.reasonsExcluded.some((r) => r.includes("clues recognised")));
+  }
+
   return { rows, passed, failed: rows.length - passed };
 }

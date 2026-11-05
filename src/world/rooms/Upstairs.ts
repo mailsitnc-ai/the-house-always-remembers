@@ -1,4 +1,6 @@
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import type { RoomContext } from "./RoomContext";
 import { LightSwitch } from "../props/LightSwitch";
 import { TapeDeck } from "../props/TapeDeck";
@@ -67,6 +69,8 @@ export class Upstairs {
     const caseF = b.frame([7.45, Y, 10.1], PI, [R]);
     const suitcase = new Suitcase(ctx, b, caseF, R);
     this.r.tick(suitcase);
+    // A corner of something pale caught under the lid, at the front edge by the clasp: the case has been packed in a hurry, and not everything went in. Not pickable, not lit, not marked.
+    caseF.box("suitcase-paper-corner", [0.07, 0.006, 0.08], [0.2, 0.2215, 0.215], m.paper, { merge: false, rooms: [R] });
     // What the family packed away, lying inside under the lid.
     const papers: [number, string, string[], string, string, string, string?][] = [
       [-0.17, "anna-letter", ["Rick -", "", "I'm writing this because I", "can't say it out loud in the", "same room as Daniel.", "He was there.", "He was in the house the", "whole time.", "- A."], "Letter", "Mum's letter to Dad", "Mum's handwriting, hurried. It was never sent.", "document"],
@@ -176,6 +180,17 @@ export class Upstairs {
       const tex = paperSheet(ctx.scene, "sheet-emily-room-note", 850, ["Rick -", "", "Lavender and camphor", "in Emily's room again.", "I have not bought either.", "The room is cold when the", "house is warm.   A."], { ruled: false, paper: "#e2d8bd" });
       const sheet = dF.box("sheet-emily-room-note", [0.15, 0.004, 0.21], [0.25, 0.856, 0.0], ctx.mats.textured("sheet-mat-emily-room-note", tex), { pick: true, merge: false });
       new Readable(ctx, b, sheet, { id: "emily-room-note", verb: "note", title: "Mum's note", text: "Mum's handwriting, years old. She did not want to know who was looking after the room.", texture: tex, size: [0.3, 0.3], evidence: "emily-room-note" });
+    }
+    // Dried lavender in a twist of cloth beside the note, long past flowering: the room smells of it, and nobody has brought it in. A sprig on the dresser, nothing more.
+    {
+      const lav = new StandardMaterial("m-dried-lavender", ctx.scene);
+      lav.diffuseColor = new Color3(0.38, 0.3, 0.5);
+      lav.specularColor = Color3.Black();
+      for (let k = 0; k < 5; k++) {
+        const stem = dF.cyl("lavender-stem", { h: 0.14, bottom: 0.004, sides: 5 }, [0.02 + k * 0.012, 0.92, 0.04 + (k % 2) * 0.02], lav, { merge: false, rooms: [R] });
+        stem.rotation.z = (k - 2) * 0.12;
+        stem.isPickable = false;
+      }
     }
     furn.tableLamp("emily-nightlight", dF.at([-0.3, 0.85, 0]), R, { on: true, interactive: true, intensity: 0.55, range: 4.5 });
     decor.photo([1.3, Y + 1.6, 6.1], [0, 1], [0.3, 0.38], "siblings", R, "Framed photograph", "Two children on a front step. One of them is holding the other's hand, a little too tightly.", "siblings-photo");

@@ -23,7 +23,7 @@ import type { Input } from "../core/Input";
 import { Aftermath, CORPSE_AT } from "../world/Aftermath";
 import { photograph } from "../world/PaperTextures";
 import type { SaveSystem } from "../platform/SaveSystem";
-import { ROUNDS, THRESHOLDS, caughtEnding, factsOf, type EndingId, type Round } from "./Endings";
+import { ROUNDS, caughtEnding, factsOf, planReport, type EndingId, type Round } from "./Endings";
 
 /** Things a scene script can wait for. */
 type Wait =
@@ -234,14 +234,17 @@ export class Finale {
     const round = ROUNDS[this.currentRound];
     const facts = factsOf(this.d.story.evidence, this.d.state);
     this.choices = round.choices(facts);
-    // For the final question, say in the browser console exactly what Daniel does and does not know (nothing is shown in the game): when the "True" line is absent this names the missing requirement.
+    // For the final question, record exactly what it was built from (nothing is shown in the game): in the console, in `window.__finalQuestion`, and in the browser's storage
+    // under `thar.diag.finalQuestion`, so that when the "True" line is absent a real playthrough can say precisely which requirement was not met.
     if (this.currentRound === "plan") {
-      const missing: string[] = [];
-      if (!facts.tapeExposed) missing.push("the tape has not been exposed (voice analysis not solved)");
-      if (!facts.mirrorSeen) missing.push("the bathroom mirror scene has not completed");
-      if (!facts.bodySeen) missing.push("Emily's room scene has not been seen");
-      if (facts.motiveClues < THRESHOLDS.motiveClues) missing.push(`only ${facts.motiveClues} of the 3 clues about the Matron's purpose found (house statement, parish letter, Mum's note in Emily's room; two are needed)`);
-      console.info("[ending] final question", { ...facts, trueOptionOffered: this.choices.some((c) => c.id === "refuse"), missing });
+      const report = planReport(this.d.story.evidence, this.d.state);
+      console.info("[ending] final question", report);
+      (window as unknown as { __finalQuestion?: unknown }).__finalQuestion = report;
+      try {
+        localStorage.setItem("thar.diag.finalQuestion", JSON.stringify({ at: new Date().toISOString(), ...report }));
+      } catch {
+        /* storage may be blocked */
+      }
     }
     this.d.events.emit("choices:show", { choices: this.choices });
   }

@@ -47,6 +47,44 @@ export function factsOf(evidence: EvidenceSystem, state: GameState): Facts {
   return { reconstructed, memoriesDoubted, tapeExposed, motiveClues, bodySeen, mirrorSeen, responsibility, understandsMatron };
 }
 
+/**
+ * What the final question (the plan round) was built from, and why the "True" line is or is not offered. Every value is read from the same state the choices are built from.
+ * The Finale logs it and keeps a copy in the browser's storage, so a missing option can be explained from a real playthrough.
+ */
+export function planReport(evidence: EvidenceSystem, state: GameState): {
+  flags: Record<string, boolean>;
+  clues: Record<string, boolean>;
+  recognisedClues: number;
+  cluesNeeded: number;
+  memoriesDoubted: number;
+  memoriesNeeded: number;
+  decisions: Record<string, boolean>;
+  understandsMatron: boolean;
+  trueOptionOffered: boolean;
+  reasonsExcluded: string[];
+} {
+  const f = factsOf(evidence, state);
+  const clues = Object.fromEntries(MOTIVE_CLUES.map((id) => [id, evidence.has(id)]));
+  const reasonsExcluded: string[] = [];
+  if (!f.tapeExposed) reasonsExcluded.push("tape not exposed (flag puzzle:voice-analysis is false)");
+  if (!f.mirrorSeen) reasonsExcluded.push("mirror scene not seen (flag seen:mirror is false)");
+  if (!f.bodySeen) reasonsExcluded.push("Emily's room scene not seen (flag seen:body is false)");
+  if (f.motiveClues < THRESHOLDS.motiveClues) reasonsExcluded.push(`only ${f.motiveClues} of ${MOTIVE_CLUES.length} clues recognised (${MOTIVE_CLUES.filter((id) => !clues[id]).join(", ")} not found); ${THRESHOLDS.motiveClues} needed`);
+  const keys = ["offer:stay", "offer:unsure", "offer:refuse", "comfort:stay", "comfort:own", "comfort:afraid"];
+  return {
+    flags: { "puzzle:voice-analysis": f.tapeExposed, "puzzle:reconstruct": f.reconstructed, "seen:mirror": f.mirrorSeen, "seen:body": f.bodySeen },
+    clues,
+    recognisedClues: f.motiveClues,
+    cluesNeeded: THRESHOLDS.motiveClues,
+    memoriesDoubted: f.memoriesDoubted,
+    memoriesNeeded: THRESHOLDS.memoriesDoubted,
+    decisions: Object.fromEntries(keys.map((k) => [k, state.get(`decision:${k}`)])),
+    understandsMatron: f.understandsMatron,
+    trueOptionOffered: ROUNDS.plan.choices(f).some((c) => c.id === "refuse"),
+    reasonsExcluded,
+  };
+}
+
 export interface Choice {
   id: string;
   text: string;

@@ -356,9 +356,24 @@ export class StoryUi {
       </div>`;
   }
 
+  /**
+   * "MATRON CLUES: X/3": the three documents that show what the Matron has been doing (any two are enough to understand her). It reads the same evidence list the ending reads,
+   * so it is right after a save and a load and updates the moment a clue is collected. It names the three and says nothing about where they are. Shown from the Matron's chapters on,
+   * or as soon as one has been found.
+   */
+  private matronClues(): string {
+    const ev = this.story.evidence;
+    const names: [string, string][] = [["house-statement", "House statement"], ["parish-letter", "Parish letter"], ["emily-room-note", "Mum's note in Emily's room"]];
+    const have = names.filter(([id]) => ev.has(id)).length;
+    if (have === 0 && this.story.chapterNumber < 6) return "";
+    const rows = names.map(([id, label]) => (ev.has(id) ? `<div class="clue got">✓ ${esc(label)}</div>` : `<div class="clue lack">· ${esc(label)} <i>undiscovered</i></div>`)).join("");
+    return `<div class="clues"><div class="stat">MATRON CLUES: ${have}/3</div>${rows}</div>`;
+  }
+
   private evidenceTab(): string {
     const found = this.story.evidence.list();
-    if (!found.length) return `<p class="empty">Nothing yet. Look around the house, and read what the family left.</p>`;
+    const clues = this.matronClues();
+    if (!found.length) return `${clues}<p class="empty">Nothing yet. Look around the house, and read what the family left.</p>`;
     const sel = found.find((f) => f.def.id === this.selected) ?? found[found.length - 1];
     this.selected = sel.def.id;
     const list = found
@@ -366,7 +381,7 @@ export class StoryUi {
       .join("");
     const d = sel.def;
     const play = d.recording ? `<button class="act" data-play="${d.recording}">${this.story.recordings.playing === d.recording ? "Stop" : "Play"} recording</button>` : "";
-    return `<div class="two"><div class="list">${list}</div><div class="detail">
+    return `${clues}<div class="two"><div class="list">${list}</div><div class="detail">
       ${sel.thumb ? `<img class="thumb" src="${sel.thumb}" alt="">` : ""}
       <h3>${esc(d.title)}</h3>
       <div class="meta">${KIND_LABEL[d.kind]}${d.optional ? " · optional" : ""} · ${esc(d.where)}</div>
