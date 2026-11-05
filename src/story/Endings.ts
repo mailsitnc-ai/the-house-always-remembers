@@ -35,7 +35,8 @@ export const MOTIVE_CLUES = ["house-statement", "parish-letter", "emily-room-not
 export const THRESHOLDS = { memoriesDoubted: 4, motiveClues: 2 } as const;
 
 export function factsOf(evidence: EvidenceSystem, state: GameState): Facts {
-  const memoriesDoubted = evidence.memories().filter((m) => m.status !== "held").length;
+  // From the evidence, not from the journal's surfaced memories (see EvidenceSystem.doubtedCount).
+  const memoriesDoubted = evidence.doubtedCount();
   const motiveClues = MOTIVE_CLUES.filter((id) => evidence.has(id)).length;
   const reconstructed = state.get("puzzle:reconstruct");
   const tapeExposed = state.get("puzzle:voice-analysis");

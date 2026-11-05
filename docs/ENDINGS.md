@@ -50,3 +50,38 @@ The living-room frame shows Dad, Mum, Daniel (13) and Emily (8) **and the fifth 
 
 ## Objective locations on the house map
 The map rings the objective room only when the objective text names it: the foyer for TRY THE FRONT DOOR and OPEN THE FRONT DOOR, the living room for PUT THE TRUTH WHERE THE LIE HANGS, and the study or living room for the two earlier puzzle steps only after their plainer hint appears. Ending objectives (WALK OUT, WATCH, LISTEN) have no ring, and the objective clears when the credits start.
+
+## Chapter 8, Question 2: both answers ended in Denial (fix)
+**Status: fixed in the working tree, not yet committed.**
+
+### What I could and could not establish
+- The comfort round (Question 2) is `ROUNDS.comfort` in `src/story/Endings.ts`. It offers "Stay." (`stay`, always) and either "I did this. I'm sorry." (`own`) **if `facts.responsibility`**, or "I can't look at it." (`afraid`) **if not**. `stay` and `afraid` both lead to Denial by design; only `own` leads on (to the plan round). So **both options lead to Denial exactly when `responsibility` is false.**
+- `responsibility` = the night is reconstructed **and** `memoriesDoubted >= 4`. `memoriesDoubted` was counted from `evidence.memories()`, i.e. only the memories that had **surfaced in the journal**. Memories surface on **timers** a few seconds after a chapter begins (`StoryDirector.surface`), and those timers are not saved. A game closed or reloaded in those seconds comes back with memories missing, even with all the evidence in hand.
+- Demonstration (automated, real classes): with all required evidence and no memories surfaced, the old formula gives **0** doubted memories (so `responsibility` false, Question 2 = "Stay." / "I can't look at it.", both Denial); the evidence-based count gives **6**.
+- **Not established:** that this is what happened in your game. I do not have your recording or save, so I cannot see which two options Question 2 showed. The symptom matches this cause exactly, and no other code path I traced can send both options to Denial (callbacks, option ids, stored decisions, Question 1 overwriting, an unconditional fallback: all checked and correct).
+- The first problem in the previous run was not the game: my browser script waited for the confrontation while the browser pane was hidden (the game does not run while its tab is hidden), so it never progressed. I closed the tab to stop it.
+
+### Files changed
+`src/story/EvidenceSystem.ts` (`doubtedCount()`, quiet `introduce`), `src/story/Endings.ts` (`factsOf` uses it), `src/story/StoryDirector.ts` (`syncMemories()`), `src/core/Game.ts` (calls it after a load; dev hook `endingTests`), `src/story/Finale.ts` (clean decision flags at the start of each confrontation), `src/dev/EndingsTest.ts` (new, dev only), `src/dev/observer/Route.ts` (dev-only `&choices=` override).
+
+### The correction
+1. `memoriesDoubted` is now counted from the evidence found (`doubtedCount()`), not from which memories happened to surface. The threshold (4) and the meaning are unchanged. With the evidence the night reconstruction itself requires, at least four memories are contradicted, so Question 2 now offers "I did this. I'm sorry." to a player who has done the reconstruction.
+2. After a save is loaded, memories whose moment has passed are surfaced silently (`syncMemories`), so the journal agrees.
+3. Every confrontation starts by clearing all `decision:*` flags, so nothing from an earlier attempt can colour the next.
+
+### Question 2 mapping (unchanged canon)
+Option "Stay." -> Denial. Option "I did this. I'm sorry." -> plan round (then "Then it's mine to carry…" -> Recognition, or "No. But you don't get to decide…" -> the chase and the True Ending path). "I can't look at it." (only when responsibility is genuinely absent) -> Denial.
+
+### Tests
+- **Unit/integration (real `EvidenceSystem`, `GameState`, `ROUNDS`, `resolve`, `caughtEnding`), `await __debug.endingTests()`: 25 of 25 pass.** They cover: Question 2 options with and without responsibility; no dependence on surfaced memories; the Question 1 x Question 2 matrix (unsure/refuse x stay/own, plus Question 1 "Take me to her room"); each choice's destination; the plan round with one and two motive clues; being caught (honest -> Recognition; evaded, "Stay", or never owned -> Denial); a fresh attempt has no decisions.
+- **Real game, through the on-screen choice keys (Observer, isolated `thar.observer.true` save):** unsure then Stay -> Question 2 showed `stay`/`own`, stored `comfort:stay`, **Denial**. unsure then own then accept -> stored `comfort:own`, plan round shown, **Recognition**. refuse then Stay -> **Denial**.
+- **Loaded state:** a save with its surfaced memories emptied was loaded through the game's normal Continue; the journal came back with all 6 and `responsibility` true.
+- **Not run after the fix:** refuse, own, accept in the real game; the full True route (chase, door puzzle, credits, post-credits); a real-game run of the unfixed code to watch Question 2 fail. True Ending logic itself is unchanged (the unit tests show it still resolves to the chase).
+
+### Final True Ending verification (after the fix)
+Observer True route from the Chapter 8 checkpoint (isolated `thar.observer.true` save, pane visible, progress watchdog, about 7 minutes), real on-screen choice keys, no teleport and no assigned flags:
+- Question 1 showed: "Take me to her room." / "I don't know what happened." / "That isn't what happened." -> selected "That isn't what happened." (`refuse`).
+- **Question 2 showed: "Stay." / "I did this. I'm sorry."** -> selected "I did this. I'm sorry." (`own`, stored `decision:comfort:own`).
+- Question 3 showed: "Then it's mine to carry. Let it end here." / "No. But you don't get to decide what I do with it." -> selected the latter (`refuse`).
+- Transformation (`finale:unmasked`), then the **chase started** (`finale:chase`, objective RUN, 3 grabs escaped), then the door sequence (`door-tried`, `photo-seen`, `print`, `anchor`), `ending:true` ("WALK OUT"), credits, post-credits, BYE BYE and the main menu.
+- The 25 ending tests passed again; typecheck and production build clean; the bundle contains no Observer, debug or ending-test code.

@@ -233,7 +233,9 @@ export async function runRoute(bot: Bot, route: RouteName, c: ObserverContext): 
     await step("to Emily's room", () => bot.walkTo({ x: (near.x0 + near.x1) / 2, z: (near.z0 + near.z1) / 2 }, 1, "emily", 0.7));
     await bot.sleep(0.5);
   }
-  await bot.finaleChoices(CHOICES[route]);
+  // Developer testing: `&choices=unsure,stay` answers the confrontation with exactly those choice ids (through the real on-screen choice keys).
+  const asked = new URLSearchParams(location.search).get("choices");
+  await bot.finaleChoices(asked ? asked.split(",") : CHOICES[route]);
   if (c.state.get("finale:chase")) {
     const caught = route.startsWith("caught");
     // The failure routes let the second grab run out the ten seconds; every route breaks free of the first.

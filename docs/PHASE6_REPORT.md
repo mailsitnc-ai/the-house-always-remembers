@@ -124,3 +124,5 @@ Follow-up (verification and deployment): the True route was rerun on the final c
 Second follow-up: the family photograph (a second two-children frame beside it was being opened instead), collision audit tool and a stuck-recovery key, consistency fixes. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 16.
 
 Third follow-up: the study tape deck is now a clearly visible cassette deck with Chapter 5 objective steps, and a house map (M) was added. Details: `docs/PHASE6_FINAL_SIGNOFF.md` section 17.
+
+Fourth follow-up: Chapter 8 Question 2 bug (responsibility was counted from journal-surfaced memories, which depend on lost timers). Details: `docs/ENDINGS.md`, last section.

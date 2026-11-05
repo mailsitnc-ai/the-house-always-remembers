@@ -136,10 +136,19 @@ export class EvidenceSystem {
   // ---- memories --------------------------------------------------------------------------------
 
   /** Surfaces one of Daniel's recollections in the journal. */
-  introduce(id: string): void {
+  introduce(id: string, quiet = false): void {
     if (this.introduced.has(id)) return;
     this.introduced.add(id);
-    this.events.emit("memory:added", { id });
+    if (!quiet) this.events.emit("memory:added", { id });
+  }
+
+  /**
+   * How many of Daniel's six false memories the evidence found so far contradicts. This is counted from the evidence itself, not from which memories have
+   * already surfaced in the journal: surfacing is paced by timers (a few seconds after a chapter begins) and is lost if the game is closed first, and the
+   * ending must not depend on that.
+   */
+  doubtedCount(): number {
+    return RECOLLECTIONS.filter((m) => m.contradictedBy.some((id) => this.found.has(id))).length;
   }
 
   memories(): MemoryView[] {

@@ -345,6 +345,8 @@ export class Game {
           if (prevDoors) for (const [id, open] of Object.entries(prevDoors)) this.house.doors[id]?.setOpen(open);
           return out;
         },
+        /** Developer-only tests of the confrontation branching (see dev/EndingsTest.ts). */
+        endingTests: async () => (await import("../dev/EndingsTest")).runEndingTests(),
         /** Developer-only collision/softlock audit against the real collision system (see dev/CollisionAudit.ts). */
         audit: async () => {
           const { auditCollisions } = await import("../dev/CollisionAudit");
@@ -508,6 +510,7 @@ export class Game {
     this.player.position.set(at.x, at.level * 3 + 1.65, at.z);
     this.player.setLook(at.yaw, 0);
     this.story.chapters.restore(d.chapter);
+    this.story.syncMemories();
     this.horror.restore(d.horror);
     this.events.emit("inventory:changed", { items: this.inventory.list() });
   }

@@ -283,6 +283,17 @@ export class StoryDirector {
     }
   }
 
+  /**
+   * After a save is loaded: surfaces, without a notice, every memory whose moment has already passed. They normally surface a few seconds after their chapter
+   * begins (a timer), so a game closed in those seconds would otherwise come back without them.
+   */
+  syncMemories(): void {
+    const n = this.chapters.number;
+    const ev = this.evidence;
+    const due: [string, boolean][] = [["m1", ev.has("living-photo")], ["m2", n >= 3], ["m3", n >= 3], ["m4", ev.hasHeard("fake") || ev.has("tape-analysis")], ["m5", n >= 6], ["m6", n >= 7]];
+    for (const [id, ok] of due) if (ok) ev.introduce(id, true);
+  }
+
   /** The false tape only appears in the deck once the Matron chapter has begun. */
   get falseTapeAvailable(): boolean {
     return this.chapters.number >= 5;

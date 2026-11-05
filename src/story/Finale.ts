@@ -483,7 +483,8 @@ export class Finale {
     yield 1.5;
     yield { rec: "fin-reveal-3" };
     yield 1;
-    // The confrontation.
+    // The confrontation. Every attempt starts from clean decisions: nothing an earlier attempt stored can colour this one.
+    for (const r of ["offer", "comfort", "plan"]) for (const c of ["stay", "unsure", "refuse", "own", "afraid", "accept"]) state.set(`decision:${r}:${c}`, false);
     this.currentRound = "offer";
     let result: EndingId | "chase" | null = null;
     while (!result) {
