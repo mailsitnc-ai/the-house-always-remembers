@@ -135,6 +135,84 @@ export function buildLesserEntities(h: HorrorDirector): Encounter[] {
     end: () => hollow.vanish(),
   };
 
+  // ---- The Hollow: the ghoul. Seen far off in the dark, still; then, between one look and the next, it is on him in three jumps, and it is gone. -----------------------------------------
+  // The jump scare of the Hollow. It cannot touch him (it stops 1.6 m short and breaks up), and a beam of light on it still ends it at once. Under reduced intensity it only creeps nearer.
+  let gh = { t: 0, stage: 0, jumps: 0 };
+  const ghoul: Encounter = {
+    id: "hollow-ghoul",
+    major: true,
+    once: false,
+    minChapter: 5,
+    maxChapter: 8,
+    minTension: 0.35,
+    cooldown: 330,
+    priority: 6,
+    canStart: () => {
+      const r = h.room();
+      return !!r && !h.roomLit(r) && !h.hunt && !h.speaking && h.roomSeconds() > 4 && !!st.along(yaw(), 8, 5);
+    },
+    start: () => {
+      gh = { t: 0, stage: 0, jumps: 0 };
+      const s = st.along(yaw(), 8, 5);
+      if (!s) return;
+      hollow.appear(s.x, s.z, h.level(), new Vector3(h.pos.x, 0, h.pos.z), 0.6);
+      audio.hollowStaticAt(s.x, s.z);
+    },
+    update: (dt) => {
+      gh.t += dt;
+      if (!hollow.visible && gh.t > 1) return true;
+      const head = hollow.position.add(new Vector3(0, 1.3, 0));
+      if (flashlight.lights(head, 10, 0.92)) {
+        flashlight.flicker(0.2);
+        if (hollow.lit(dt)) {
+          audio.paper();
+          hollow.hide(0.3);
+          return true;
+        }
+      }
+      if (gh.stage === 0) {
+        // It stands and watches, its head turning in jerks, while the light on him is short.
+        if (Math.floor(gh.t * 2) % 3 === 0) hollow.snapHeadToward(h.pos.x, h.pos.z);
+        if (gh.t > 3.2 && hollow.seenBy(h.pos, h.forward, 0.6)) {
+          gh.stage = 1;
+          gh.t = 0;
+          h.dim(0.35);
+          h.flick(0.4);
+        } else if (gh.t > 14) {
+          hollow.hide(1.5);
+          return true;
+        }
+        return false;
+      }
+      if (gh.stage === 1) {
+        // In the dark: three jumps, each shorter than the last, each with a burst of static.
+        if (gh.t > 0.38 && gh.jumps < 3) {
+          gh.t = 0;
+          gh.jumps++;
+          const dist = hollow.distanceTo(h.pos);
+          const stop = h.reduced ? 3.2 : 1.6;
+          const step = Math.max(0, Math.min(dist - stop, gh.jumps === 3 ? dist : dist * 0.45));
+          if (step > 0.1) hollow.jumpToward(h.pos.x, h.pos.z, step);
+          audio.hollowStaticAt(hollow.position.x, hollow.position.z);
+          if (gh.jumps === 3) {
+            h.scare({ sting: "sting" });
+            h.jumpscares.punch(0.12);
+            hollow.snapHeadToward(h.pos.x, h.pos.z);
+          }
+        }
+        if (gh.jumps >= 3 && gh.t > 0.5) {
+          gh.stage = 2;
+          gh.t = 0;
+          audio.hollowStaticAt(hollow.position.x, hollow.position.z);
+          hollow.hide(0.12);
+        }
+        return false;
+      }
+      return gh.t > 0.6;
+    },
+    end: () => hollow.vanish(),
+  };
+
   // ---- The Unremembered: a failing memory in the room, thick air, a swimming view -----------------------------------------------------
   let u = { t: 0, fov: 0, room: null as RoomId | null, again: false };
   const FOV_BASE = (): number => deps.player.camera.fov;
@@ -186,5 +264,5 @@ export function buildLesserEntities(h: HorrorDirector): Encounter[] {
     },
   };
 
-  return [denial, glimpse, wrong];
+  return [denial, glimpse, ghoul, wrong];
 }

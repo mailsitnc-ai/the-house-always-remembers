@@ -20,7 +20,7 @@ import type { InventorySystem } from "../systems/InventorySystem";
 import { Chase } from "../horror/Chase";
 import { GRAB_SECONDS, Struggle } from "../horror/Struggle";
 import type { Input } from "../core/Input";
-import { Aftermath } from "../world/Aftermath";
+import { Aftermath, CORPSE_AT } from "../world/Aftermath";
 import { photograph } from "../world/PaperTextures";
 import type { SaveSystem } from "../platform/SaveSystem";
 import { ROUNDS, caughtEnding, factsOf, type EndingId, type Round } from "./Endings";
@@ -464,11 +464,32 @@ export class Finale {
     if (!flashlight.on) flashlight.toggle();
     audio.setRoomAmbience("emily");
     this.veil(0, 1800);
+    // Before anything is shown: the room goes quiet and nearly dark, and Daniel's own breathing is the loudest thing in it. Nothing here is new story; it is only time and sound
+    // spent on the moment before he sees what the Matron has kept.
+    stage.setLamp(0.05);
+    audio.duck(9);
     yield 2.5;
+    audio.breathAt(O.x, O.z - 2.4);
+    yield 1.6;
+    // The lamp comes up slowly, and in the wrong way: it catches the edge of a sheet, the shape of something laid out and tucked in, in a room where nobody has lived for eleven years.
+    yield { glide: { pos: [O.x + 0.25, 1.25, O.z - 1.2], yaw: -0.05, pitch: 0.1, t: 6 } };
+    for (let i = 0; i < 36; i++) {
+      stage.setLamp(0.05 + 0.3 * (i / 36) + (i % 9 === 4 ? -0.12 : 0));
+      if (i === 14) audio.breathAt(O.x, O.z - 2.4);
+      yield 0.12;
+    }
+    // A long held look at the shape under the sheet before the camera is allowed any closer.
+    yield 2.8;
+    audio.breathAt(O.x, O.z - 2.4);
     yield { glide: { pos: [O.x - 0.1, 1.6, O.z - 0.2], yaw: 0.08, pitch: 0.28, t: 7 } };
     // The hand, and the ribbon on its wrist.
     state.set("seen:body");
     yield { glide: { pos: [O.x - 0.75, 1.55, O.z - 0.45], yaw: 0.5, pitch: 0.52, t: 4.5 } };
+    // The hand, with the faded ribbon. A pause in which nothing happens: she does not breathe, and Daniel's breathing is all that moves.
+    audio.breathAt(O.x - 0.75, O.z - 1.2);
+    yield 3.2;
+    audio.breathAt(O.x - 0.75, O.z - 1.2);
+    yield 1.8;
     yield { rec: "fin-reveal-1" };
     audio.stinger("drop");
     stage.setLamp(0.4);
@@ -901,12 +922,57 @@ export class Finale {
     this.veil(1, 160);
     audio.stinger("drop");
     yield 0.4;
-    audio.slam(1);
-    audio.matronCry("shriek");
-    yield 0.9;
-    audio.slam(1);
-    yield 1.4;
-    m.vanish();
+    if (soft) {
+      // Reduced scare intensity: the transfer stays unseen, as it always was.
+      audio.slam(1);
+      audio.matronCry("shriek");
+      yield 0.9;
+      audio.slam(1);
+      yield 1.4;
+      m.vanish();
+    } else {
+      // The transfer, in flashes between darkness: she kneels over him, her hand goes into his chest, the blood comes, and then it is dark again. Cut in a few short strokes, not
+      // lingered on; the room and the wound are the ones the aftermath shows afterwards.
+      stage.show("chamber", 0.16);
+      this.aftermath.show(1.6);
+      lighting.setFogTarget(0.06, [0.034, 0.012, 0.012]);
+      if (!flashlight.on) flashlight.toggle();
+      events.emit("cine:letterbox", { on: true });
+      const CX = O.x + CORPSE_AT.x;
+      const CZ = O.z + CORPSE_AT.z;
+      const flash = function* (self: Finale, ms: number, sound: () => void): Script {
+        self.veil(0, 30);
+        sound();
+        yield ms / 1000;
+        self.veil(1, 40);
+        yield 0.22;
+      };
+      // The framings are measured from where he lies (his chest is at CX + 0.34, CZ + 1.23; his head toward the bed) and where she kneels beside him (CX + 0.73, CZ + 1.17).
+      // 1. From his feet, low: her silhouette beside him, close, looking down at him.
+      m.appear(CX + 0.73, CZ + 1.17, 0, -Math.PI / 2, 0.05);
+      this.setCam(CX + 0.35, 0.35, CZ + 0.05, 0.1, -0.35);
+      yield* flash(this, 220, () => audio.slam(1));
+      // 2. From above his chest: his body in the pool, her dress across the frame, her hands at him.
+      this.setCam(CX + 0.35, 1.3, CZ + 0.75, 0, 1.25);
+      yield* flash(this, 200, () => audio.matronCry("shriek"));
+      // 3. Close: the wound, and her arm in it.
+      this.setCam(CX + 0.34, 0.72, CZ + 1.02, 0, 1.45);
+      yield* flash(this, 180, () => audio.slam(1));
+      // 4. His face, from the side away from her: the mouth open on a cry that makes no sound.
+      this.setCam(CX - 0.05, 0.55, CZ + 1.25, 1.08, 0.63);
+      yield* flash(this, 240, () => audio.matronCry("call"));
+      // 5. The dark threads leaving him, arching to the bed; she stands over it.
+      this.aftermath.setThreads(0.8, this.clock);
+      this.setCam(CX - 0.35, 0.55, CZ + 1.05, 1.0, -0.05);
+      yield* flash(this, 220, () => audio.slam(1));
+      // 6. The blood: the lens fills with it.
+      this.veil(0.92, 30, "#6e0000");
+      audio.stinger("sting");
+      yield 0.34;
+      this.veil(1, 60, "#000");
+      yield 0.5;
+      m.vanish();
+    }
     yield 2.2;
     // The aftermath, in the reconstructed room.
     this.chasing = false;

@@ -75,7 +75,7 @@ export function buildMatronScares(h: HorrorDirector): Encounter[] {
     minTension: 0.15,
     cooldown: 190,
     priority: 7,
-    canStart: () => !!h.room() && !h.hunt && h.roomSeconds() > 5 && !h.speaking,
+    canStart: () => !!h.room() && !h.hunt && h.roomSeconds() > 3 && !h.speaking,
     start: () => {
       a = { t: 0, stage: 0, yaw0: yaw(), steps: 0 };
     },
@@ -468,7 +468,7 @@ export function buildMatronScares(h: HorrorDirector): Encounter[] {
     priority: 9,
     canStart: () => {
       const r = h.room();
-      if (!r || !SAFE[r] || h.hunt || h.speaking || !h.roomLit(r) || h.roomSeconds() < 9) return false;
+      if (!r || !SAFE[r] || h.hunt || h.speaking || !h.roomLit(r) || h.roomSeconds() < 6) return false;
       const s = SAFE[r]!;
       return st.visible(s.x, s.z, 0, 3);
     },

@@ -52,6 +52,16 @@ export class Unremembered {
     return list;
   }
 
+  /** Builds the next fragment model level that does not exist yet (at most one per call), so a scare never has to build one. */
+  primeNext(): void {
+    for (let l = this.level; l < this.protos.length; l++) {
+      if (!this.protos[l]) {
+        this.protoFor(l);
+        return;
+      }
+    }
+  }
+
   setCorruption(c: number): void {
     this.corruption = c;
   }

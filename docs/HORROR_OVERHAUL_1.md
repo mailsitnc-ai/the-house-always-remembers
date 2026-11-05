@@ -91,3 +91,44 @@ Matron: heavy low tread (`stepAt`) and slow breath (`breathAt`), placed. Hollow:
 * The Witness got only the shutter flash and its existing guiding; no new guiding behaviour.
 * No real-audio listening test, no real-device performance test, no organic (hand-played) walkthrough of Chapters 6–8 with the new scares in the loop.
 * `Staging.validate()` is dev tooling but is not tree-shaken out of production; it is a small, unused method.
+
+---
+
+# Horror Overhaul 1.1 and 1.2 — repairs and validation
+
+Evidence labels: **[source]** code inspection · **[tsc]** typechecked · **[test]** automated (25 ending tests) · **[natural]** seen in a normal Observer session (nothing forced) · **[forced]** seen only when the encounter was started by hand · **[not tested]**.
+Nothing here was listened to (no audio output was available to the author), and no real Mac measurement was made.
+
+## 1.1 changes (committed in 1bd1667)
+Door gap works from the landing and from inside rooms (waits until she has been seen through the gap); mirror reflection dim, cold and blurred, only where the cramped bathroom allows it; Hollow rim-lit, irregular hop / sidestep / head-snap movement with placed static; Witness guide choreography (idle → turn → show the photograph → turn back and point; flash when the clue is found or looked at); entity materials capped at two lights and shaders prepared early; audio chain reordered so master and effects volume really scale loud sounds; spatial sounds keep their direction when scheduled; steps, breath, shutter and scrape raised; one-shot pulse fix.
+
+## 1.2 changes (uncommitted)
+* **Fair scheduling** (`HorrorDirector.chooseEncounter`): never-played and long-unplayed encounters are favoured, the one that just played is penalised, priority still counts; no encounter is forced. Turn and Safe Room dwell thresholds loosened. [source][tsc]
+* **Hollow ghoul** (`hollow-ghoul`, Ch5+, dark rooms, tension ≥ 0.35, cooldown 330 s): the Hollow is seen still and far off; when looked at, the lights stutter and it closes in three jumps with static to 1.6 m, then breaks up. It cannot touch; a flashlight beam ends it; reduced intensity: it only creeps nearer. [forced]
+* **Unremembered**: fragment model levels are built one per room entry in the background. [source][tsc]
+* **Emily's reveal** (`Finale.chamberScene`): before anything is shown the room is nearly dark and quiet, Daniel's breath is the loudest sound, the lamp rises unevenly over ~4 s, a long held look at the sheet-covered shape precedes the move toward the head, and a ~5 s pause follows the hand with the ribbon. No new dialogue, no new story. [natural]
+* **Denial transfer** (`Finale.denialScene`): unless reduced scare intensity is on, the former black cut is now six short flashes between darkness (the Matron looming; her hands at his chest; the wound; his face; the dark thread leaving; a red flood), then the unchanged aftermath. Reduced intensity keeps the original unseen version. No dialogue or events changed. [natural, Denial route]
+
+## Verification results
+| Item | Result |
+|---|---|
+| Typecheck | clean [tsc] |
+| 25 ending tests | 25 / 25 [test] |
+| Production build | builds; no `__debug`, Observer, collision-audit or ending-test code in it [source] |
+| Observer session Ch1→8 at 4× (single bounded run, no forcing) | **natural:** Turn (Ch6, Ch7), Unremembered fragments (Ch6, storage), Last Look (Ch8, landing, during the hunt), Witness at Emily's recorder (Ch3) and at the album (Ch4) each through idle → turn → show → back; also the existing pursuit, night, doorway and door encounters; disturbances: overhead steps, door-ajar ×2, lights-behind, emily-box, door-behind. **not seen naturally:** Door Gap, Reflection, Follower, Safe Room, Hollow denial, Hollow ghoul, Hollow glimpse, Watch (they were seen only in forced tests). |
+| Witness targets | all six Witness spots point at a real interactable within 0.04 m (recorder deck, album print, family photograph, kitchen note, answering machine, suitcase) [source/measured in the live scene]; Ch3 and Ch4 guiding seen naturally |
+| Emily reveal, continuous capture in the Observer's Ch8 chamber (200 frames, 5 per second, `reveal-continuous-*.jpg`) | darkness and the lamp coming up, the sheet-covered figure framed from the foot of the bed, then the full bed with the ribbon on the wrist visible as a small lavender band [natural]. Not a video file (no ffmpeg). Player control: the scene is the existing locked cinematic; not tested with a human player. |
+| Denial transfer in normal progression (`transfer-continuous-*.jpg`) | plays: the Matron looming, red flash, black, then the aftermath, no page errors [natural]. Some flash framings are rough (one shows only his legs and the red wash), so the camera positions of flashes 2–5 want tuning. |
+| Recognition ending | completed to the menu, no errors (earlier 1.2 run, isolated slot) [natural] |
+| Performance (embedded browser, hidden pane, noisy: base render 2–8 ms) | Hollow first appearance 14.5 ms vs 0.8 ms afterwards (was ~20–38 ms); Unremembered: first `force` call 29.7 ms, first render 4.7 ms, afterwards a spawn costs 1–4.5 ms (cause of the first 29.7 ms not isolated); Emily chamber: first frame 20.5 ms, then median 0.7 ms, max 0.9 ms; chamber lights: flashlight + 3 room lamps + stage lamp + figure light, one shadow generator (the flashlight), 0 post-processes, 49 active meshes. |
+| Audio | not listened to; level measurements from 1.1 stand |
+
+## Known issues
+Door Gap, Reflection, Follower, Safe Room, Hollow denial, Hollow ghoul and Hollow glimpse have never been seen in a natural Observer run (the bot moves too quickly through rooms for their dwell conditions); the Unremembered first-call cost is unexplained; transfer flash framings 2–5 are rough; no audio listening; no real-device timing; the screenshot folder holds ~240 exact duplicate files (see the cleanup report in the chat).
+
+## 1.2 final polish and cleanup
+* **Transfer camera polish** (`Finale.denialScene`): the five flash framings are now measured from where Daniel lies (chest at `CX+0.34, CZ+1.23`) and where the Matron kneels beside him (`CX+0.73, CZ+1.17`): (1) low from his feet with her silhouette over him, (2) above his chest with his body in the pool and her dress across the frame, (3) close on the wound and her arm, (4) his face from the side away from her, (5) the dark threads arching to the bed with her standing over it; then the red flood and black, into the unchanged aftermath. Observed in a normal Denial run (`polished-transfer-*.jpg`, `polish-tf1..5.jpg`).
+* **Reduced scare intensity**: a Denial run with the setting on completed to `ending:done` and emitted no red-flood veil (0, against 1 in the normal run), i.e. the original unseen transfer is kept. Observed in a normal Denial run.
+* **Regression**: typecheck clean; 25 / 25 ending tests (includes the Question 2 fix); production build contains no `__debug`, Observer, collision-audit, showcase or ending-test code.
+* **Screenshot cleanup** (`docs/horror-overhaul-1-1/`): 175 exact-content duplicates removed (69 `denial-stage-*`, 75 `chamber-clip-*`, 9 `reveal-clip-*`, 22 `transfer-continuous-*`), each with an identical retained file. The remaining unique `chamber-clip-*`, `reveal-clip-*` and `denial-run-*` frames were kept because they are not duplicates.
+* **Limitations kept**: audio has not been verified by ear; Door Gap, Reflection, Follower, Safe Room, Hollow denial, Hollow ghoul, Hollow glimpse and Watch were observed only in forced tests, not natural gameplay; performance figures were taken with the preview pane hidden and are approximate.

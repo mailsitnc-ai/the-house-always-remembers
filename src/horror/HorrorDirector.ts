@@ -72,6 +72,7 @@ export class HorrorDirector {
   prevRoom: RoomId | null = null;
   leftAt = -999;
   private lastDisturbance = "";
+  private lastEncounterId = "";
   private witnessNoticed = false;
   tension = 0;
   scares = 0;
@@ -175,6 +176,8 @@ export class HorrorDirector {
     }
     await this.hollow.prewarm();
     await this.witness.prewarm();
+    // One more level of the Unremembered's fragment models per call, in the background, so the first one a scare needs is already built.
+    this.unremembered.primeNext();
   }
 
   /** A dip of the lights as part of a scare: skipped under "Reduced scare intensity" (no visual punch), like the jumpscares' own. */
@@ -477,7 +480,16 @@ export class HorrorDirector {
       return e.canStart();
     });
     if (!options.length) return;
-    const pick = options.sort((a, b) => b.priority - a.priority)[0];
+    // Fair rotation: of everything that could play now, what has never played this session, or not for the longest time, is favoured over what played last. Priority still
+    // matters (the story's own encounters keep their weight), but one scare can no longer crowd the others out, and none is forced: it only wins if its own conditions hold.
+    const score = (e: Encounter): number => {
+      const last = this.lastEnd.get(e.id);
+      const fresh = last === undefined ? 3.5 : Math.min(3, (this.clock - last) / 90);
+      const justPlayed = this.lastEncounterId === e.id ? -4 : 0;
+      return e.priority + fresh + justPlayed + Math.random() * 1.2;
+    };
+    const pick = options.sort((a, b) => score(b) - score(a))[0];
+    this.lastEncounterId = pick.id;
     this.active = pick;
     pick.start();
   }
