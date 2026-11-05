@@ -112,6 +112,18 @@ export class Door implements Interactable {
     return !!this.cfg.fixed;
   }
 
+  /** The wall the door is in runs along this axis ("z": the door's normal is X). */
+  get wallAxis(): "x" | "z" {
+    return this.cfg.axis;
+  }
+
+  /** A point in the doorway, as a fraction of its width from the hinge (the latch side is 1), on the floor. */
+  doorwayPoint(fraction: number): { x: number; z: number } {
+    const h = this.cfg.hinge;
+    const d = this.cfg.leafDir * this.cfg.width * fraction;
+    return this.cfg.axis === "z" ? { x: h.x, z: h.z + d } : { x: h.x + d, z: h.z };
+  }
+
   get hingePosition(): Vector3 {
     return this.cfg.hinge;
   }
@@ -126,6 +138,17 @@ export class Door implements Interactable {
     this.angle = this.target;
     this.pivot.rotation.y = this.angle;
     if (this.cfg.collide ?? true) this.leaf.checkCollisions = Math.abs(this.angle) < 0.35;
+  }
+
+  /** True while the door stands only a little open (the horror director leaves one ajar). */
+  get isAjar(): boolean {
+    return this.target !== 0 && Math.abs(this.target) < (this.cfg.maxAngle ?? OPEN_ANGLE) * 0.75;
+  }
+
+  /** Swings the door to a fraction (0..1) of its full opening, with the creak. `1` is fully open, `0` closed; the leaf blocks the player only while nearly closed, as ever. */
+  swingTo(fraction: number): void {
+    this.target = this.sign * (this.cfg.maxAngle ?? OPEN_ANGLE) * Math.max(0, Math.min(1, fraction));
+    this.ctx.audio.creak();
   }
 
   /** Opens the door whatever its lock (the finale: the front door finally opens). */

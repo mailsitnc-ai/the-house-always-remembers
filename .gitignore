@@ -7,3 +7,5 @@ dist
 docs/full-story-demo/video*/
 .env*
 *.log
+docs/chapter-6-to-8/*.mp4
+docs/chapter-6-to-8/*.log

@@ -172,7 +172,7 @@ export class Jumpscares {
   }
 
   /** A brief field-of-view kick and a one-frame dim. Off when the player has chosen reduced scare intensity. */
-  private punch(amount: number): void {
+  punch(amount: number): void {
     if (this.h.reduced) return;
     const cam = this.h.deps.player.camera;
     if (this.fovLeft <= 0) this.fovBase = cam.fov;
@@ -221,7 +221,7 @@ export class Jumpscares {
     this.tick -= dt;
     if (this.tick > 0) return;
     this.tick = 0.25;
-    if (!room || h.active || h.speaking || h.hunt || h.clock - this.lastAny < GLOBAL_GAP || h.deps.story.inPrologue) return;
+    if (!room || h.active || h.speaking || h.hunt || h.clock - this.lastAny < (h.chapter >= 6 ? GLOBAL_GAP * 0.65 : GLOBAL_GAP) || h.deps.story.inPrologue) return;
     for (const s of this.scares) {
       if (h.chapter < s.minChapter || h.chapter > s.maxChapter || !s.rooms.includes(room)) continue;
       if (s.once && this.done.has(s.id)) continue;

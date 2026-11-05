@@ -41,6 +41,8 @@ export interface WitnessFigure extends Figure {
   grain: DynamicTexture;
   /** The raised arm, the hand and the small photograph it holds; it pivots at the shoulder. */
   photoArm: TransformNode;
+  /** The material of the picture on the small photograph (only on the main figure), so it can "develop" and flash. */
+  photoMat?: StandardMaterial;
 }
 
 /**
@@ -283,6 +285,7 @@ export function buildWitness(scene: Scene, ghost = false): WitnessFigure {
   add(rh, m, photoArm, -0.04, -0.27, 0.244);
   rh.rotation.set(-Math.PI / 2 + 0.15, 0.0, 0.0);
   rh.scaling.setAll(0.72);
+  let photoMat: StandardMaterial | undefined;
   if (!ghost) {
     // A real photograph: the four of them on the step, the family as the album has it. Painted once, small.
     const photoTex = new DynamicTexture("tex-witness-photo", { width: 256, height: 192 }, scene, true);
@@ -293,6 +296,7 @@ export function buildWitness(scene: Scene, ghost = false): WitnessFigure {
     pic.diffuseTexture = photoTex;
     pic.emissiveColor = new Color3(0.32, 0.3, 0.27);
     pic.specularColor = new Color3(0.1, 0.1, 0.1);
+    photoMat = pic;
     const card = MeshBuilder.CreateBox("witness-photo", { width: 0.125, height: 0.095, depth: 0.004 }, scene);
     add(card, paper, photoArm, -0.04, -0.125, 0.262);
     card.rotation.x = -0.22;
@@ -302,5 +306,5 @@ export function buildWitness(scene: Scene, ghost = false): WitnessFigure {
     face.rotation.y = Math.PI;
   }
   root.setEnabled(false);
-  return { root, head, body, meshes, height: 1.95, grain, photoArm };
+  return { root, head, body, meshes, height: 1.95, grain, photoArm, photoMat };
 }

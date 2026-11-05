@@ -54,6 +54,9 @@ export class AudioManager {
   private lastError: string | null = null;
   private readonly emitters = new Map<string, Emitter>();
   private sfx!: GainNode;
+  private comp!: DynamicsCompressorNode;
+  /** The effects level, after the compressor. */
+  private effectsOut!: GainNode;
   private dialogueBus!: GainNode;
   private dialogueAnalyser: AnalyserNode | null = null;
   private effectsVolume = 1;
@@ -187,7 +190,7 @@ export class AudioManager {
 
   setEffectsVolume(v: number): void {
     this.effectsVolume = v;
-    if (this.ctx) this.sfx.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+    if (this.ctx) this.effectsOut.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
   }
 
   setDialogueVolume(v: number): void {
@@ -260,8 +263,8 @@ export class AudioManager {
   duck(seconds: number): void {
     const ctx = this.ctx;
     if (!ctx) return;
-    this.sfx.gain.setTargetAtTime(this.effectsVolume * 0.15, ctx.currentTime, 0.12);
-    this.later(seconds, () => this.sfx.gain.setTargetAtTime(this.effectsVolume, ctx.currentTime, 0.35));
+    this.effectsOut.gain.setTargetAtTime(this.effectsVolume * 0.15, ctx.currentTime, 0.12);
+    this.later(seconds, () => this.effectsOut.gain.setTargetAtTime(this.effectsVolume, ctx.currentTime, 0.35));
   }
 
   /** Synthesised stings: "swell" builds slowly, "sting" is a short dissonant hit, "drop" is a deep impact. */
@@ -476,6 +479,11 @@ export class AudioManager {
   }
 
   update(pos: Vector3, forward: Vector3): void {
+    this.lx = pos.x;
+    this.lz = pos.z;
+    const fl = Math.hypot(forward.x, forward.z) || 1;
+    this.lfx = forward.x / fl;
+    this.lfz = forward.z / fl;
     if (!this.ctx) return;
     const l = this.ctx.listener;
     if (l.positionX) {
@@ -495,6 +503,93 @@ export class AudioManager {
   }
 
   // ---- one-shot sounds -------------------------------------------------------------------------
+
+  private out: AudioNode | null = null;
+  private lx = 0;
+  private lz = 0;
+  private lfx = 0;
+  private lfz = 1;
+
+  /**
+   * Makes the sounds `fn` creates (through tone/burst) come from the house position (x, z): panned left or right of where the listener faces and softer with distance.
+   * Used for footsteps in the next room, breathing behind the player, a door far away. It goes through the same effects volume and sudden-audio scaling as everything else.
+   */
+  playAt(x: number, z: number, fn: () => void, gain = 1): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const dx = x - this.lx;
+    const dz = z - this.lz;
+    const d = Math.hypot(dx, dz) || 0.01;
+    const right = (dx * this.lfz - dz * this.lfx) / d;
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = Math.max(-1, Math.min(1, right)) * 0.9;
+    const g = ctx.createGain();
+    g.gain.value = Math.max(0.12, Math.min(1, 1.3 / (1 + d * 0.35))) * gain;
+    pan.connect(g).connect(this.sfx);
+    this.out = pan;
+    try {
+      fn();
+    } finally {
+      this.out = null;
+    }
+  }
+
+  /** The Matron's tread, heavy and slow, from a place in the house. */
+  stepAt(x: number, z: number): void {
+    const k = this.intensity;
+    this.playAt(x, z, () => {
+      // The weight (below what a small speaker can reproduce), a knock of the heel in the range a laptop or a phone does reproduce, and a short click of the boards.
+      this.burst(0.15, 68, 0.95 * k);
+      this.burst(0.1, 210, 1.5 * k, "bandpass");
+      this.burst(0.04, 1300, 0.7 * k, "bandpass");
+    });
+  }
+
+  /** Slow breath close behind the listener (the Matron's sound: calm, never a scream). */
+  breathAt(x: number, z: number): void {
+    const k = Math.max(0.45, this.intensity);
+    this.playAt(x, z, () => {
+      this.burst(1.5, 1500, 0.2 * k, "bandpass");
+      this.burst(1.2, 380, 0.26 * k);
+    });
+  }
+
+  /** Furniture dragged across boards in another room: a low, grainy scrape that rises and stops. */
+  scrapeAt(x: number, z: number): void {
+    const k = Math.max(0.5, this.intensity);
+    this.playAt(x, z, () => {
+      this.burst(0.55, 190, 0.4 * k, "bandpass");
+      this.later(0.12, () => this.burst(0.4, 260, 0.3 * k, "bandpass"));
+      this.later(0.7, () => this.burst(0.08, 70, 0.6 * k));
+    });
+  }
+
+  /** A few notes of a music box from another room, thin and a little out of tune. Quiet and slow; not a sudden sound. */
+  musicBoxAt(x: number, z: number): void {
+    const k = Math.max(0.6, this.intensity);
+    this.playAt(x, z, () => {
+      [523.25, 493.88, 440, 392, 415.3].forEach((f, i) => this.later(i * 0.55, () => this.tone("triangle", f, 1.1, 0.05 * k)));
+    }, 0.9);
+  }
+
+  /** The Hollow's static coming from where it stands (so the player can turn toward it). */
+  hollowStaticAt(x: number, z: number): void {
+    this.playAt(x, z, () => this.hollowStatic(), 0.9);
+  }
+
+  /** The Hollow: a dry burst of static, like a broken signal. */
+  hollowStatic(): void {
+    const k = this.intensity;
+    for (let i = 0; i < 6; i++) this.later(i * 0.05, () => this.burst(0.045, 2600 + Math.random() * 3200, 0.17 * k, "highpass"));
+  }
+
+  /** The Unremembered: two notes a little apart, sliding, like a music box that cannot finish its tune. Quiet and slow; not a sudden sound. */
+  unstable(): void {
+    const k = Math.max(0.6, this.intensity);
+    this.tone("sine", 233.1, 2.4, 0.045 * k);
+    this.tone("sine", 247.5, 2.4, 0.04 * k);
+    this.later(0.9, () => this.tone("triangle", 329.6, 1.6, 0.03 * k));
+  }
 
   /** Clearly audible three-note test, triggered from the pause menu. */
   async playTest(): Promise<void> {
@@ -538,9 +633,11 @@ export class AudioManager {
 
   /** The Witness: a quiet camera-shutter click and a short projector whirr. Soft, so it never startles by volume. */
   shutter(): void {
-    this.burst(0.03, 2200, 0.35, "bandpass");
-    this.later(0.09, () => this.burst(0.05, 1500, 0.3, "bandpass"));
-    this.later(0.2, () => this.burst(0.6, 700, 0.06, "bandpass"));
+    // The Witness's signature: a camera shutter, two clicks and a settling. Clear enough to be heard over the house, and softer under "reduce sudden audio".
+    const k = Math.max(0.45, this.intensity);
+    this.burst(0.03, 2200, 0.8 * k, "bandpass");
+    this.later(0.09, () => this.burst(0.05, 1500, 0.7 * k, "bandpass"));
+    this.later(0.2, () => this.burst(0.6, 700, 0.1 * k, "bandpass"));
   }
 
   click(): void {
@@ -616,17 +713,22 @@ export class AudioManager {
     try {
       this.master = ctx.createGain();
       this.master.gain.value = this.volume;
-      // A gentle compressor on the way out keeps sudden peaks from startling the player.
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -20;
-      comp.knee.value = 18;
-      comp.ratio.value = 4;
-      comp.attack.value = 0.008;
-      comp.release.value = 0.28;
-      this.master.connect(comp).connect(ctx.destination);
+      this.master.connect(ctx.destination);
+      // Every effect passes through a gentle compressor so sudden peaks cannot startle the player, and THEN through the effects level and the master level. The levels come after the
+      // compressor on purpose: before, they came before it, and a compressor flattens a loud sound, so halving the master volume barely made a loud scare quieter.
+      this.comp = ctx.createDynamicsCompressor();
+      this.comp.threshold.value = -20;
+      this.comp.knee.value = 18;
+      this.comp.ratio.value = 4;
+      this.comp.attack.value = 0.008;
+      this.comp.release.value = 0.28;
+      this.effectsOut = ctx.createGain();
+      this.effectsOut.gain.value = this.effectsVolume;
+      this.comp.connect(this.effectsOut).connect(this.master);
+      // Where effects and ambience connect: unity gain, into the compressor.
       this.sfx = ctx.createGain();
-      this.sfx.gain.value = this.effectsVolume;
-      this.sfx.connect(this.master);
+      this.sfx.gain.value = 1;
+      this.sfx.connect(this.comp);
       // Music (the music box and chapter pads) has its own level, and passes through the effects bus.
       this.music = ctx.createGain();
       this.music.gain.value = this.musicVolume;
@@ -661,7 +763,17 @@ export class AudioManager {
   }
 
   private later(seconds: number, fn: () => void): void {
-    window.setTimeout(fn, seconds * 1000);
+    // A sound scheduled from inside playAt() keeps its place in the house: without this, every part of it after the first note would come out of the middle.
+    const pan = this.out;
+    window.setTimeout(() => {
+      const prev = this.out;
+      this.out = pan;
+      try {
+        fn();
+      } finally {
+        this.out = prev;
+      }
+    }, seconds * 1000);
   }
 
   private tone(type: OscillatorType, freq: number, dur: number, gain: number): void {
@@ -674,7 +786,7 @@ export class AudioManager {
     const g = ctx.createGain();
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g).connect(this.sfx);
+    osc.connect(g).connect(this.out ?? this.sfx);
     osc.start(t);
     osc.stop(t + dur + 0.05);
   }
@@ -693,7 +805,7 @@ export class AudioManager {
     const g = ctx.createGain();
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(this.sfx);
+    src.connect(f).connect(g).connect(this.out ?? this.sfx);
     src.start(t, Math.random() * (buf.duration - dur - 0.1));
     src.stop(t + dur + 0.05);
   }

@@ -34,10 +34,10 @@ export function buildHollow(scene: Scene): Figure {
   ash.specularColor = new Color3(0.12, 0.12, 0.13);
   ash.specularPower = 6;
   ash.ambientColor = new Color3(1, 1, 1);
-  ash.emissiveColor = new Color3(0.012, 0.014, 0.02);
+  ash.emissiveColor = new Color3(0.04, 0.046, 0.06);
   ash.backFaceCulling = false;
   ash.twoSidedLighting = true;
-  ash.emissiveFresnelParameters = new FresnelParameters({ leftColor: new Color3(0.34, 0.38, 0.46), rightColor: Color3.Black(), power: 2.4, bias: 0.04 });
+  ash.emissiveFresnelParameters = new FresnelParameters({ leftColor: new Color3(0.62, 0.7, 0.86), rightColor: Color3.Black(), power: 1.7, bias: 0.1 });
   
   const meshes: Mesh[] = [];
   const add = <T extends Mesh>(mesh: T, mat: StandardMaterial, parent: TransformNode, x = 0, y = 0, z = 0): T => {

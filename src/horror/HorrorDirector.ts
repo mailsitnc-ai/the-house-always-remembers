@@ -20,6 +20,10 @@ import { Veil } from "./Veil";
 import { DISTURBANCES } from "./Disturbances";
 import { buildEncounters, type Encounter } from "./Encounters";
 import { Jumpscares } from "./Jumpscares";
+import { Staging } from "./Staging";
+import { BathroomMirror } from "./BathroomMirror";
+import { buildMatronScares } from "./MatronScares";
+import { buildLesserEntities } from "./LesserEntities";
 import { corruptionStage } from "./Corruption";
 
 export interface HorrorDeps {
@@ -37,7 +41,7 @@ export interface HorrorDeps {
 }
 
 /** Where the Witness stands for each piece of key evidence, and what it faces. */
-const WITNESS_SPOTS: { evidence: string; room: RoomId; level: 0 | 1; at: [number, number]; faces: [number, number] }[] = [
+export const WITNESS_SPOTS: { evidence: string; room: RoomId; level: 0 | 1; at: [number, number]; faces: [number, number] }[] = [
   { evidence: "living-photo", room: "living", level: 0, at: [4.2, 1.2], faces: [0.1, 3.75] },
   { evidence: "kitchen-note", room: "kitchen", level: 0, at: [13.0, 6.2], faces: [11.95, 10.56] },
   { evidence: "emily-recorder", room: "emily", level: 1, at: [1.9, 10.2], faces: [0.4, 8.1] },
@@ -58,6 +62,17 @@ export class HorrorDirector {
   readonly witness: Witness;
   readonly unremembered: Unremembered;
   readonly nav = new Navigation();
+  readonly staging: Staging;
+  /** Extra shader/GPU preparation registered by the scenes (their own lights, the mirror), run behind the loading screen with the entities' own warm-up. */
+  readonly warmers: ((on: boolean) => void)[] = [];
+  readonly mirror: BathroomMirror;
+  private roomName: RoomId | null = null;
+  private roomSince = 0;
+  /** The room the player was last in before this one, and when they left it (for events that happen in the room just left). */
+  prevRoom: RoomId | null = null;
+  leftAt = -999;
+  private lastDisturbance = "";
+  private witnessNoticed = false;
   tension = 0;
   scares = 0;
   enabled = true;
@@ -101,7 +116,9 @@ export class HorrorDirector {
     this.hollow = new Hollow(deps.scene);
     this.witness = new Witness(deps.scene);
     this.unremembered = new Unremembered(deps.scene);
-    this.encounters = buildEncounters(this);
+    this.staging = new Staging(deps.scene, this);
+    this.mirror = new BathroomMirror(deps.scene);
+    this.encounters = [...buildEncounters(this), ...buildMatronScares(this), ...buildLesserEntities(this)];
     this.jumpscares = new Jumpscares(this);
     // The Matron's mouth and hands follow the level of her voice whenever she is on screen and speaking.
     deps.story.recordings.onLevel = (level) => this.matron.speak(this.matron.visible ? level : 0);
@@ -117,8 +134,14 @@ export class HorrorDirector {
       if (id === "voice-analysis") this.pursuitAt = this.clock + 7;
     });
     deps.events.on("evidence:added", ({ id }) => {
-      if (this.witnessId === id) this.witness.acknowledge();
+      if (this.witnessId === id) {
+        this.witness.acknowledge();
+        this.deps.audio.shutter();
+      }
+      // She notices what he finds: from her chapters on, every piece of evidence brings her nearer, soon.
+      this.provoke(0.45);
     });
+    deps.events.on("recording:ended", () => this.provoke(0.35));
     // Phase 3 left a hook here for the Matron chapter; it is satisfied by the chapter-5 encounters.
     deps.story.onMatronChapter = () => this.chapterStart.set(5, this.clock);
   }
@@ -127,6 +150,46 @@ export class HorrorDirector {
 
   room(): RoomId | null {
     return this.deps.registry.currentRoom;
+  }
+
+  /**
+   * The Matron reacts to what Daniel does: evidence, a recording, Emily's room. From chapter 6 this raises the tension to at least `level` and lets the next big moment come
+   * without waiting out the gap (it still obeys its own cooldowns and conditions, and never interrupts one already playing).
+   */
+  provoke(level: number): void {
+    if (this.chapter < 6) return;
+    this.tension = Math.min(1, Math.max(this.tension, level));
+    this.lastMajorEnd = Math.min(this.lastMajorEnd, this.clock - 60);
+  }
+
+  /** Switchable so the effect of the prewarm can be measured against itself (development). */
+  prewarmEnabled = true;
+
+  private async prewarmEntities(): Promise<void> {
+    // The Matron's own lights are on while hers are compiled (that is the combination she appears in); the Hollow does the same with its rim light.
+    for (const w of this.warmers) w(true);
+    try {
+      await this.matron.prewarm();
+    } finally {
+      for (const w of this.warmers) w(false);
+    }
+    await this.hollow.prewarm();
+    await this.witness.prewarm();
+  }
+
+  /** A dip of the lights as part of a scare: skipped under "Reduced scare intensity" (no visual punch), like the jumpscares' own. */
+  dim(seconds: number): void {
+    if (!this.reduced) this.deps.lighting.dip(seconds);
+  }
+
+  /** A flicker of the flashlight as part of a scare: skipped under "Reduced scare intensity". */
+  flick(seconds: number): void {
+    if (!this.reduced) this.deps.flashlight.flicker(seconds);
+  }
+
+  /** How long the player has been in the current room. */
+  roomSeconds(): number {
+    return this.clock - this.roomSince;
   }
 
   level(): 0 | 1 {
@@ -281,10 +344,23 @@ export class HorrorDirector {
   update(dt: number): void {
     if (!this.enabled) return;
     this.clock += dt;
+    const rm = this.room();
+    if (rm !== this.roomName) {
+      if (this.roomName && rm) {
+        this.prevRoom = this.roomName;
+        this.leftAt = this.clock;
+      }
+      this.roomName = rm;
+      this.roomSince = this.clock;
+      if (rm === "emily") this.provoke(0.3);
+      // A moment after entering a room (its lamps are settled), the entities' shaders for this lighting are made ready, so a scare here compiles nothing.
+      if (this.prewarmEnabled) this.later(0.5, () => void this.prewarmEntities());
+    }
     this.updateCorruption(dt);
     const { player } = this.deps;
     this.matron.update(dt, this.pos);
     this.hollow.update(dt);
+    this.hollow.setViewer(this.pos);
     this.witness.update(dt);
     this.unremembered.update(dt, this.pos, this.forward);
     // Keep walking figures on the floor (and on the stairs).
@@ -296,7 +372,7 @@ export class HorrorDirector {
     this.updateTension(dt);
     this.updateVeils(dt);
     this.updatePresence();
-    this.updateWitness();
+    this.updateWitness(dt);
     this.updateCine(dt);
     this.jumpscares.update(dt);
     // The final hunt ends the moment the player is in Emily's room, whether or not the pursuit happens to be running.
@@ -358,7 +434,9 @@ export class HorrorDirector {
 
   private updateTension(dt: number): void {
     const dark = !this.roomLit(this.room());
-    this.tension += dt * (dark ? 0.012 : -0.03);
+    // From the Matron's chapters on the house does not let him rest: tension climbs faster in the dark and barely falls in the light.
+    const late = this.chapter >= 6;
+    this.tension += dt * (dark ? (late ? 0.02 : 0.012) : late ? -0.006 : -0.03);
     if (this.chapter >= 4) this.tension += dt * 0.004;
     if (this.matron.visible) this.tension += dt * 0.02;
     this.tension = Math.max(0, Math.min(1, this.tension));
@@ -386,7 +464,9 @@ export class HorrorDirector {
 
   private chooseEncounter(): void {
     if (this.speaking && !this.active) return;
-    const major = this.hunt || this.clock - this.lastMajorEnd > 55;
+    // The gap between big moments tightens as the story does: patient early, relentless in the last chapters.
+    const gap = this.chapter >= 8 ? 24 : this.chapter >= 7 ? 32 : this.chapter >= 6 ? 40 : 55;
+    const major = this.hunt || this.clock - this.lastMajorEnd > gap;
     const options = this.encounters.filter((e) => {
       if (e.major && !major) return false;
       if (e.once && this.done.has(e.id)) return false;
@@ -462,10 +542,19 @@ export class HorrorDirector {
 
   private maybeDisturb(): void {
     // No random wrongness until the player has looked at the family photograph: the opening is paced by the story, not by chance.
-    if (this.chapter < 2 || !this.deps.story.evidence.has("living-photo") || this.clock - this.lastMinor < 25) return;
-    const options = DISTURBANCES.filter((d) => this.tension >= d.minTension);
-    if (!options.length || Math.random() > 0.4) return;
-    options[Math.floor(Math.random() * options.length)].run(this);
+    if (this.chapter < 2 || this.hunt || this.speaking || !this.deps.story.evidence.has("living-photo")) return;
+    // The house is quiet early and restless late: the gap and the chance both tighten with the chapter.
+    const gap = this.chapter >= 6 ? 14 : this.chapter >= 4 ? 24 : 38;
+    const chance = this.chapter >= 6 ? 0.7 : this.chapter >= 4 ? 0.5 : 0.35;
+    if (this.clock - this.lastMinor < gap) return;
+    const options = DISTURBANCES.filter((d) => this.tension >= d.minTension && this.chapter >= (d.minChapter ?? 2) && (!d.when || d.when(this)));
+    if (!options.length || Math.random() > chance) return;
+    // Not the same one twice in a row.
+    const fresh = options.filter((d) => d.id !== this.lastDisturbance);
+    const pool = fresh.length ? fresh : options;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    this.lastDisturbance = pick.id;
+    pick.run(this);
     this.lastMinor = this.clock;
     this.tension = Math.max(0, this.tension - 0.05);
   }
@@ -487,7 +576,7 @@ export class HorrorDirector {
 
   // ---- the Witness -----------------------------------------------------------------------------
 
-  private updateWitness(): void {
+  private updateWitness(dt: number): void {
     const w = this.witness;
     const { story } = this.deps;
     if (w.visible && this.witnessId) {
@@ -495,8 +584,16 @@ export class HorrorDirector {
       const d = w.distanceTo(this.pos);
       const seen = w.seenBy(this.pos, this.forward, 0.9);
       w.setSeen(w.seenBy(this.pos, this.forward, 0.6));
+      w.guide(this.pos, this.forward, dt);
       w.gaze = seen ? w.gaze + 0.016 : Math.max(0, w.gaze - 0.01);
-      if (d < 1.6 || w.gaze > 4 || this.room() !== spot.room) {
+      // The first time it is properly noticed, the shutter: a click and a blink of the light, like a photograph being taken. Never hostile, once per sighting.
+      if (seen && !this.witnessNoticed) {
+        this.witnessNoticed = true;
+        w.noticed();
+        this.deps.audio.shutter();
+        if (!this.reduced) this.deps.lighting.dip(0.14);
+      }
+      if (d < 1.6 || w.gaze > 7 || w.satisfied || this.room() !== spot.room) {
         w.hide(1.6);
         if (!this.deps.state.get("said:witness-gone") && spot.evidence === "emily-recorder") {
           this.deps.state.set("said:witness-gone");
@@ -530,6 +627,7 @@ export class HorrorDirector {
         this.later(2.5, () => this.deps.events.emit("thought", { text: "Someone is standing there. A hat, a long coat, something held to its chest. It isn't looking at me." }));
       }
       this.witnessId = s.evidence;
+      this.witnessNoticed = false;
       return;
     }
   }
@@ -546,6 +644,10 @@ export class HorrorDirector {
     this.hollow.warm(on);
     this.witness.warm(on);
     this.unremembered.warm(on);
+    // Their lights, the bathroom mirror and the placement colliders are prepared now, so the first scare does not stall the frame to build them.
+    if (on) this.staging.prime();
+    for (const w of this.warmers) w(on);
+    this.mirror.warm(on, this.matron.meshList);
   }
 
   /** Status line for the performance overlay. */
